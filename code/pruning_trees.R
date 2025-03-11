@@ -17,14 +17,20 @@ tips2drop <- list()
                              size = floor(Ntip(targ_tre)*samp_prop[j]), 
                              replace = F)
     prn_trs <- lapply(X = tips2drop, function(X) drop.tip(phy = targ_tre, tip = X))
-  } 
+  }
 prn_trs %>% saveRDS(paste0("output/rand_pruned_trs_", samp_prop[j], ".rds"))
 }
 
 # sim character ####
 n_reps <- 100
-sim_char <- sim.char(targ_tre, par = .2, nsim = n_reps, model = "BM")
-sim_char %>% saveRDS("output/sim_char_bm.rds")
+run_char <- F
+if(run_char){
+  sim_char <- sim.char(targ_tre, par = .2, nsim = n_reps, model = "BM")
+  sim_char %>% saveRDS("output/sim_char_bm.rds")
+} else {
+  sim_char <- readRDS("output/sim_char_bm.rds")
+  class(sim_char); dim(sim_char)
+}
 
 ## lateral pruning ####
 # classifies continuous values into percentiles
