@@ -2,9 +2,11 @@ library(tidyverse)
 library(geiger)
 
 #load tree
-fern_tre <- read.tree("data/nitta-et-al/results/japan_ferns_tree_dated.tre")
+fern_tre <- read.tree("output/nitta_node-named.tre") 
 is.binary(fern_tre) ; is.ultrametric(fern_tre)
 targ_tre <- fern_tre
+
+dir.create("output/pruned_trees/")
 
 # random pruning ####
 samp_prop <- c(.05, .15,.3, .5) ; n_reps <- 100
@@ -18,7 +20,7 @@ tips2drop <- list()
                              replace = F)
     prn_trs <- lapply(X = tips2drop, function(X) drop.tip(phy = targ_tre, tip = X))
   }
-prn_trs %>% saveRDS(paste0("output/rand_pruned_trs_", samp_prop[j], ".rds"))
+prn_trs %>% saveRDS(paste0("output/pruned_trees/rand_pruned_trs_", samp_prop[j], ".rds"))
 }
 
 # sim character ####
@@ -33,7 +35,7 @@ if(run_char){
 }
 
 ## lateral pruning ####
-# classifies continuous values into percentiles
+# classifies continuous values into five percentiles, and samples/prunes the first four in increments
 lat_samp_prop <- c(.05, .15, .3, .5) 
 lat_funct=function(x){cut(x, 
                           breaks = c(-Inf, quantile(x, lat_samp_prop), +Inf), 
@@ -43,18 +45,16 @@ lat_funct=function(x){cut(x,
 lat_cat2filt <- c("below.05", ".05to.15", ".15to.3", ".3to.5", "above.5")
 
 lat_tips2drop <- list()
-for(j in 1:c(length(lat_cat2filt))-1){
+for(j in 1:length(lat_samp_prop)){
   lat_tips2drop <- data.frame(sim_char) %>% 
     rownames_to_column(var = "tip_names") %>% 
-    mutate(across(where(is.numeric), lat_funct)) %>% 
+    mutate(across(where(is.numeric), lat_funct)) %>%
     gather(key = sim_n, value = cat2perc, -tip_names) %>% 
     filter(cat2perc %in% lat_cat2filt[1:j]) %>% 
     group_split(sim_n, .keep = F) %>% lapply(., '[[', "tip_names")
   
   lat_trs <- lapply(X = lat_tips2drop, function(X) drop.tip(phy = targ_tre, tip = X))
-  lat_trs %>% saveRDS(paste0("output/lateral_pruned_trs_", lat_samp_prop[j], ".rds"))
-  print(paste0("Original tree: ", Ntip(targ_tre)))
-  print(paste0("New trees: ", sapply(lat_trs, Ntip)))
+  lat_trs %>% saveRDS(paste0("output/pruned_trees/lateral_pruned_trs_", lat_samp_prop[j], ".rds"))
 }
 
 ## marginal pruning ####
@@ -85,11 +85,58 @@ for(i in 1:length(marg_cat2filt_ls)){
   
   marg_trs <- lapply(X = marg_tips2drop, function(X) drop.tip(phy = targ_tre, tip = X))
   marg_trs %>% 
-    saveRDS(paste0("output/marginal_pruned_trs_", c(length(marg_cat2filt_ls[[i]])*.025), ".rds"))
-  print(paste0("Original tree: ", Ntip(targ_tre)))
-  print(paste0("New trees: ", sapply(marg_trs, Ntip)))
+    saveRDS(paste0("output/pruned_trees/marginal_pruned_trs_", c(length(marg_cat2filt_ls[[i]])*.025), ".rds"))
 }
 
+# check  pruned tree sizes ####
+rand_fls <- list.files("output/pruned_trees", "rand_pruned", all.files = T, full.names = T)
+for(i in 1:length(rand_fls)){
+  targ_tr_ls <- readRDS(rand_fls[i])
+  sapply(targ_tr_ls, Ntip) %>% table() %>% print
+}
+
+late_fls <- list.files("output/pruned_trees", "lateral_pruned", all.files = T, full.names = T)
+for(i in 1:length(late_fls)){
+  targ_tr_ls <- readRDS(late_fls[i])
+  sapply(targ_tr_ls, Ntip) %>% 
+    max %>% 
+    #table() %>% 
+    print
+}
+
+marg_fls <- list.files("output/pruned_trees", "marginal_pruned", all.files = T, full.names = T)
+for(i in 1:length(marg_fls)){
+  targ_tr_ls <- readRDS(marg_fls[i])
+  sapply(targ_tr_ls, Ntip) %>% 
+    max %>% 
+    #table() %>% 
+    print
+}
+
+# viz BM sims  ####
+library(ggtree)
+ggtree(targ_tre, aes(color=trait), continuous = 'colour', yscale = "trait") + 
+  scale_color_viridis_c() + theme_minimal()
+
+# plot five random simulated characters
+data.frame(sim_char) %>% 
+  select(sample(1:100, 5)) %>% 
+  #rownames_to_column(var = "tip_names") %>%
+  gheatmap(ggtree(targ_tre), ., offset = 8, width = .15, 
+         colnames = F, legend_title = "trait\nvalue", ) +
+  scale_x_ggtree() + 
+  scale_y_continuous(expand = c(0, 0.2)) + 
+  theme(legend.position = "none")
+ggsave("figures/tree_simchar_s5.png", width = 25, height = 25, units = "cm", dpi = 200)
+
+# plot all random simulated characters
+data.frame(sim_char) %>% 
+  gheatmap(ggtree(targ_tre), ., offset = 8, width = 0.6, 
+           colnames = F, legend_title = "trait\nvalue", ) +
+  scale_x_ggtree() + 
+  scale_y_continuous(expand = c(0, 0.2)) + 
+  theme(legend.position = "none")
+ggsave("figures/tree_simchar.png", width = 25, height = 25, units = "cm", dpi = 200)
 
 # viz pruning data in hist ####
 library(ggpubr)
@@ -125,7 +172,7 @@ ggarrange(plotlist = lat2print, ncol = 1, common.legend = T)
 ggsave("figures/lateral_prun.png", 
        width = 20, height = 25, units = "cm", dpi = 200, bg = "white")
  
- # marginal
+# marginal
 data2plt <- data.frame(sim_char) %>% 
   rownames_to_column(var = "tip_names") %>% 
   select(1, all_of(v2samp)) %>% 
@@ -155,7 +202,7 @@ ggarrange(plotlist = marg2print, ncol = 1, common.legend = T)
 ggsave("figures/marginal_prun.png", 
        width = 20, height = 25, units = "cm", dpi = 200, bg = "white")
 
- ### with densities
+### with densities
 data2plt %>% 
   ggplot(aes(x = val, color = perc, fill = perc)) +
   #geom_histogram(fill  = "red",
@@ -171,5 +218,5 @@ data2plt %>%
   scale_color_grey(name = "Percentile") + scale_fill_grey(name = "Percentile") +
   geom_vline(data = data2plt %>% plyr::ddply("sim_n", summarise, grp.mean = mean(val)), 
              aes(xintercept = grp.mean), color = "coral",
-             linetype = "dashed")+
+             linetype = "dashed") +
   facet_wrap(~sim_n, scales = "free")
