@@ -1,6 +1,8 @@
 library(tidyverse)
 library(geiger)
 
+source("code/pe_samp_funs.R")
+
 #load tree
 fern_tre <- read.tree("output/nitta_node-named.tre") 
 is.binary(fern_tre) ; is.ultrametric(fern_tre)
@@ -37,11 +39,6 @@ if(run_char){
 ## lateral pruning ####
 # classifies continuous values into five percentiles, and samples/prunes the first four in increments
 lat_samp_prop <- c(.05, .15, .3, .5) 
-lat_funct=function(x){cut(x, 
-                          breaks = c(-Inf, quantile(x, lat_samp_prop), +Inf), 
-                          labels = c("below.05", ".05to.15", ".15to.3", ".3to.5", "above.5"))
-  }
-
 lat_cat2filt <- c("below.05", ".05to.15", ".15to.3", ".3to.5", "above.5")
 
 lat_tips2drop <- list()
@@ -60,12 +57,6 @@ for(j in 1:length(lat_samp_prop)){
 ## marginal pruning ####
 marg_samp_prop <- seq(from = .025, to = 0.975, by = .025)
 cat2filt <- paste0(rep("perc_", length(marg_samp_prop)+1), c(marg_samp_prop, 1))
-
-# classifies continuous values into percentiles
-margin_funct=function(x){cut(x, 
-                             breaks = c(-Inf, quantile(x, marg_samp_prop), +Inf),
-                             labels = cat2filt)
-  }
 
 # marginal percentiles to remove
 marg_cat2filt_ls <- list(c(head(cat2filt, 1), tail(cat2filt, 1)),
@@ -115,7 +106,7 @@ for(i in 1:length(marg_fls)){
 
 # viz BM sims  ####
 library(ggtree)
-ggtree(targ_tre, aes(color=trait), continuous = 'colour', yscale = "trait") + 
+ggtree(targ_tre, aes(color = trait), continuous = 'colour', yscale = "trait") + 
   scale_color_viridis_c() + theme_minimal()
 
 # plot five random simulated characters

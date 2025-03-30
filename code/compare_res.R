@@ -149,7 +149,42 @@ if(run_reg){
   marg_res_pars_df <- readRDS("output/pars_marg_prun.rds")
 }
 
+# metric comparison by observed or randomized
+all_prun_res_df <- rbind(rand_res_pars_df, late_res_pars_df, marg_res_pars_df)
+
 # figs #####
+#  all one plot by estimate
+all_prun_res_df %>% select(-estimate) %>% 
+  gather(key, value, -sim_n, -samp_frac, -metric, -pruning) %>% 
+  mutate(pruning = str_to_title(pruning)) %>%
+  ggplot(aes(x = (samp_frac), y = value, col = pruning)) +
+  geom_point(cex = .65, position = position_jitterdodge(jitter.width = .05, dodge.width = .05)) +
+  geom_smooth(method = "lm") +
+  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) +
+  labs(subtitle = "", x = "Proportion of tips pruned", y = "R-squared", color = "Pruning\nmethod") +
+  theme_classic(base_size = 12) + 
+  theme(strip.background = element_blank(), legend.position = "top") +
+  #scale_x_continuous(breaks = marg_frc, labels = as.character(marg_frc)) +
+  facet_wrap(~factor(metric, c(cols2sel)), ncol = 2, scales = "free")
+ggsave(filename = paste0("figures/r2_pruned.png"), 
+       width = 20, height = 25, units = "cm", dpi = 200)
+
+all_prun_res_df %>% select(-r.squared) %>% 
+  gather(key, value, -sim_n, -samp_frac, -metric, -pruning) %>% 
+  mutate(pruning = str_to_title(pruning)) %>%
+  ggplot(aes(x = (samp_frac), y = value, col = pruning)) +
+  geom_point(cex = .65, position = position_jitterdodge(jitter.width = .05, dodge.width = .05)) +
+  geom_smooth(method = "lm") +
+  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) +
+  #scale_colour_viridis_d(option = "plasma", begin = .75, end = .05 , alpha = .75) +
+  labs(subtitle = "", x = "Proportion of tips pruned", y = "Slope", color = "Pruning\nmethod") +
+  theme_classic(base_size = 12)  + 
+  theme(strip.background = element_blank(), legend.position = "top") +
+  #scale_x_continuous(breaks = marg_frc, labels = as.character(marg_frc)) +
+  facet_wrap(~factor(metric, c(cols2sel)), ncol = 2, scales = "free")
+ggsave(filename = paste0("figures/slope_pruned.png"), 
+       width = 20, height = 25, units = "cm", dpi = 200)
+
 # by pruning method
 # random 
 rand_res_pars_df %>% select(-estimate) %>%
@@ -225,9 +260,6 @@ marg_res_pars_df %>% select(-r.squared) %>%
   facet_wrap(~factor(metric, c(cols2sel)), ncol = 4, scales = "fixed")
 ggsave(filename = paste0("figures/slope_marg_pr.svg"), 
        width = 25, height = 20, units = "cm", dpi = 200)
-
-# metric comparison by observed or randomized
-all_prun_res_df <- rbind(rand_res_pars_df, late_res_pars_df, marg_res_pars_df)
 
 # observed
 all_prun_res_df %>% filter(grepl("obs", metric)) %>% 
