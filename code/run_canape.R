@@ -72,7 +72,7 @@ if(run_rand){
                                  n_iterations = saturation_point,
                                  n_reps = canaper_n_reps,
                                  tbl_out = T)
-      print(paste0("iteration: ", i, "-",  j))
+      cat("iteration: ", i, "-",  j)
       
       canape_res <- cpr_classify_endem(rand_test)
       canape_sig <- cpr_classify_signif(rand_test, metric = "pe")
@@ -100,7 +100,7 @@ if(run_late){
                                  n_iterations = saturation_point,
                                  n_reps = canaper_n_reps,
                                  tbl_out = T)
-      print(paste0("iteration: ", i, "-",  j))
+      cat("iteration: ", i, "-",  j)
       
       canape_res <- cpr_classify_endem(rand_test)
       canape_sig <- cpr_classify_signif(rand_test, metric = "pe")
@@ -126,7 +126,7 @@ if(run_marg){
                                  n_iterations = saturation_point,
                                  n_reps = canaper_n_reps,
                                  tbl_out = T)
-      print(paste0("iteration: ", i, "-",  j))
+      cat("iteration: ", i, "-",  j)
       
       canape_res <- cpr_classify_endem(rand_test)
       canape_sig <- cpr_classify_signif(rand_test, metric = "pe")
@@ -182,7 +182,7 @@ if(run_late_rand){
                                  n_iterations = saturation_point,
                                  n_reps = canaper_n_reps,
                                  tbl_out = T)
-      print(paste0("iteration: ", i, "-",  j))
+      cat("iteration: ", i, "-",  j)
       
       canape_res <- cpr_classify_endem(rand_test)
       canape_sig <- cpr_classify_signif(rand_test, metric = "pe")
@@ -208,7 +208,7 @@ if(run_marg_rand){
                                  n_iterations = saturation_point,
                                  n_reps = canaper_n_reps,
                                  tbl_out = T)
-      print(paste0("iteration: ", i, "-",  j))
+      cat("iteration: ", i, "-",  j)
       
       canape_res <- cpr_classify_endem(rand_test)
       canape_sig <- cpr_classify_signif(rand_test, metric = "pe")
