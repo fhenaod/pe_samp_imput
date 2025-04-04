@@ -9,6 +9,9 @@ is.binary(fern_tre) ; is.ultrametric(fern_tre)
 fern_com <- read.csv("data/nitta-et-al/japan_ferns_comm_full.csv", header = T) %>% 
   column_to_rownames("grids")
 
+colnames(fern_com) <- gsub(pattern = "\\.", replacement = "-", colnames(fern_com))
+colnames(fern_com) <- sub(pattern = "(\\_.*?)\\_", "\\1-", colnames(fern_com))
+
 # missing taxa in tree
 fern_com %>% colnames() %in% fern_tre$tip.label %>% table()
 
@@ -20,7 +23,7 @@ run_emp <- T ; run_rand <- T ; run_late <- T ; run_marg <- T # pruned trees
 run_rand_rand <- T ; run_late_rand <- T ; run_marg_rand <- T # pruned and randomly imputed trees
 run_rand_tax <- F  ; run_late_tax <- F  ; run_marg_tax <- F  # pruned and taxonomically imputed trees
 
-canaper_n_reps <- 1000
+canaper_n_reps <- 1000 # 3
 
 n_cores <- floor(parallel::detectCores()*.75) # 3
 plan(multisession, workers = n_cores)
@@ -48,11 +51,19 @@ if(run_emp){
                                  n_iterations = saturation_point,
                                  n_reps = canaper_n_reps,
                                  tbl_out = T)
-rand_test[, 1:9] %>% head()
+
+  
+  rand_test[, 1:9] %>% head()
 
 emp_canape_res <- cpr_classify_endem(rand_test)
-emp_canape_sig <- cpr_classify_signif(rand_test, metric = "pe")
-list(emp_canape_res, emp_canape_sig) %>% 
+sig_list <- list(emp_canape_res, 
+                 cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
+                 cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
+                 cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
+                 cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+)
+
+plyr::join_all(sig_list, by = 'site', type = 'left') %>% head()
   saveRDS(paste0("output/canaper/canaper_empirical.rds"))
 } else {}
 
@@ -75,10 +86,17 @@ if(run_rand){
       cat("iteration: ", i, "-",  j)
       
       canape_res <- cpr_classify_endem(rand_test)
-      canape_sig <- cpr_classify_signif(rand_test, metric = "pe")
-      rand_canaper_ls[[j]] <- list(canape_res, canape_sig) 
+      sig_list <- list(canape_res, 
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+                       )
+      
+      rand_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
     }
-    rand_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_rand_", rand_frc[i],".rds"))
+    rand_canaper_ls %>% 
+      saveRDS(paste0("output/canaper/canaper_rand_pr_", rand_frc[i],".rds"))
     gc()
   }
 } else {}
@@ -103,10 +121,17 @@ if(run_late){
       cat("iteration: ", i, "-",  j)
       
       canape_res <- cpr_classify_endem(rand_test)
-      canape_sig <- cpr_classify_signif(rand_test, metric = "pe")
-      late_canaper_ls[[j]] <- list(canape_res, canape_sig) 
+      sig_list <- list(canape_res, 
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+      )
+      
+      late_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
     }
-    late_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_late_", late_frc[i],".rds"))
+    late_canaper_ls %>% 
+      saveRDS(paste0("output/canaper/canaper_late_pr_", late_frc[i],".rds"))
     gc()
   }
 } else {} 
@@ -129,10 +154,17 @@ if(run_marg){
       cat("iteration: ", i, "-",  j)
       
       canape_res <- cpr_classify_endem(rand_test)
-      canape_sig <- cpr_classify_signif(rand_test, metric = "pe")
-      marg_canaper_ls[[j]] <- list(canape_res, canape_sig) 
+      sig_list <- list(canape_res, 
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+      )
+      
+      marg_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
     }
-    marg_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_marg_", marg_frc[i],".rds"))
+    marg_canaper_ls %>% 
+      saveRDS(paste0("output/canaper/canaper_marg_pr_", marg_frc[i],".rds"))
     gc()
   }
 } else {}
@@ -140,7 +172,8 @@ if(run_marg){
 # imputed dataset ####
 ## randomly imputed tree tips #####
 # random pruning
-rand_fls <- list.files("output/imputed_trees/", "rand_pr_rand_imp", all.files = T, full.names = T)
+pttr <- "rand_pr_rand_imp_"
+rand_fls <- list.files("output/imputed_trees/", pttr, all.files = T, full.names = T)
 rand_frc <- readr::parse_number(rand_fls)
 
 if(run_rand_rand){
@@ -157,16 +190,23 @@ if(run_rand_rand){
       print(paste0("iteration: ", i, "-",  j))
       
       canape_res <- cpr_classify_endem(rand_test)
-      canape_sig <- cpr_classify_signif(rand_test, metric = "pe")
-      rand_canaper_ls[[j]] <- list(canape_res, canape_sig) 
+      sig_list <- list(canape_res, 
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+      )
+      
+      rand_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
     }
-    rand_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_rand_rand_", rand_frc[i],".rds"))
+    rand_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_", pttr, rand_frc[i],".rds"))
     gc()
   }
 } else {}
 
 # lateral pruning
-late_fls <- list.files("output/imputed_trees/", "late_pr_rand_imp", all.files = T, full.names = T)
+pttr <- "late_pr_rand_imp_"
+late_fls <- list.files("output/imputed_trees/", pttr, all.files = T, full.names = T)
 late_frc <- readr::parse_number(late_fls)
 
 if(run_late_rand){
@@ -185,16 +225,23 @@ if(run_late_rand){
       cat("iteration: ", i, "-",  j)
       
       canape_res <- cpr_classify_endem(rand_test)
-      canape_sig <- cpr_classify_signif(rand_test, metric = "pe")
-      late_canaper_ls[[j]] <- list(canape_res, canape_sig) 
+      sig_list <- list(canape_res, 
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+      )
+      
+      late_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
     }
-    late_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_late_rand", late_frc[i],".rds"))
+    late_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_", pttr, late_frc[i],".rds"))
     gc()
   }
 } else {}
 
 # marginal pruning
-marg_fls <- list.files("output/imputed_trees/", "marg_pr_rand_imp", all.files = T, full.names = T)
+pttr <- "marg_pr_rand_imp_"
+marg_fls <- list.files("output/imputed_trees/", pttr, all.files = T, full.names = T)
 marg_frc <- readr::parse_number(marg_fls)
 
 if(run_marg_rand){
@@ -211,10 +258,16 @@ if(run_marg_rand){
       cat("iteration: ", i, "-",  j)
       
       canape_res <- cpr_classify_endem(rand_test)
-      canape_sig <- cpr_classify_signif(rand_test, metric = "pe")
-      marg_canaper_ls[[j]] <- list(canape_res, canape_sig) 
+      sig_list <- list(canape_res, 
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+      )
+      
+      marg_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
     }
-    marg_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_marg_rand", marg_frc[i],".rds"))
+    marg_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_", pttr, marg_frc[i],".rds"))
     gc()
   }
 } else {}
