@@ -14,6 +14,17 @@ margin_funct=function(x){cut(x,
                              labels = cat2filt)
 }
 
+# classifies significance values from canaper in three catagories
+signif2cats=function(x){
+  ifelse(x %in% c("< 0.01", "< 0.025"), "sig_low", 
+         ifelse(x %in% c("> 0.975", "> 0.99"), "sig_high", "non_sig"))
+}
+
+thres2cats=function(x){
+  ifelse(x >= ., "sig_low", 
+         ifelse(x %in% c("> 0.975", "> 0.99"), "sig_high", "non_sig"))
+}
+
 
 # names nodes in a tree based on a taxonomic table for that tree 
 name_nodes=function(tree, m_tax){
