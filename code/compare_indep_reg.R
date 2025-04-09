@@ -12,10 +12,10 @@ emp_df <- emp_canape_res %>% select(all_of(cols2sel))
 # load results from canaper, run regressions, and compare r-square and slope
 # pruned ####
 # random 
-rnd_canaper_fls <- list.files("output/canaper/", "canaper_rand_pr_[0-9]", all.files = T, full.names = T)
+rnd_canaper_fls <- list.files("output/canaper", "canaper_rand_pr_[0-9]", all.files = T, full.names = T)
 rand_frc <- readr::parse_number(rnd_canaper_fls)
 
-run_reg <- F
+run_reg <- T
 if(run_reg){
   pars_ls_dfs_res <- list()
   for(i in 1:length(rand_frc)){
@@ -58,7 +58,7 @@ if(run_reg){
 }
 
 # lateral
-late_canaper_fls <- list.files("output/canaper/", "canaper_late_pr_[0-9]", all.files = T, full.names = T)
+late_canaper_fls <- list.files("output/canaper", "canaper_late_pr_[0-9]", all.files = T, full.names = T)
 late_frc <- readr::parse_number(late_canaper_fls)
 
 run_reg <- F
@@ -105,7 +105,7 @@ if(run_reg){
 }
 
 # marginal
-marg_canaper_fls <- list.files("output/canaper/", "canaper_marg_pr_[0-9]", all.files = T, full.names = T)
+marg_canaper_fls <- list.files("output/canaper", "canaper_marg_pr_[0-9]", all.files = T, full.names = T)
 marg_frc <- readr::parse_number(marg_canaper_fls)
 
 run_reg <- F
@@ -202,7 +202,7 @@ if(run_reg){
 }
 
 # lateral
-late_canaper_fls <- list.files("output/canaper/", "canaper_late_pr_rand", all.files = T, full.names = T)
+late_canaper_fls <- list.files("output/canaper", "canaper_late_pr_rand", all.files = T, full.names = T)
 late_frc <- readr::parse_number(late_canaper_fls)
 
 run_reg <- F
@@ -249,7 +249,7 @@ if(run_reg){
 }
 
 # marginal
-marg_canaper_fls <- list.files("output/canaper/", "canaper_marg_pr_rand", all.files = T, full.names = T)
+marg_canaper_fls <- list.files("output/canaper", "canaper_marg_pr_rand", all.files = T, full.names = T)
 marg_frc <- readr::parse_number(marg_canaper_fls)
 
 run_reg <- F
@@ -300,7 +300,7 @@ all_prun_rand_imp_res_df <- rbind(rand_res_pars_df, late_res_pars_df, marg_res_p
 
 ## imputed taxonomically ####
 # random 
-rnd_canaper_fls <- list.files("output/canaper/", "canaper_rand_pr_tax", all.files = T, full.names = T)
+rnd_canaper_fls <- list.files("output/canaper", "canaper_rand_pr_tax", all.files = T, full.names = T)
 rand_frc <- readr::parse_number(rnd_canaper_fls)
 
 run_reg <- F
@@ -346,7 +346,7 @@ if(run_reg){
 }
 
 # lateral
-late_canaper_fls <- list.files("output/canaper/", "canaper_late_pr_tax", all.files = T, full.names = T)
+late_canaper_fls <- list.files("output/canaper", "canaper_late_pr_tax", all.files = T, full.names = T)
 late_frc <- readr::parse_number(late_canaper_fls)
 
 run_reg <- F
@@ -381,7 +381,7 @@ if(run_reg){
                                        select(estimate),
                                      metric = cols2sel[j],
                                      pruning = "lateral",
-                                     imputation = "taxonomy",
+                                     imputation = "",
                                      samp_frac = late_frc[i]) 
     }
     pars_ls_dfs_res[[i]] <- pars_ls_dfs %>% bind_rows() 
@@ -393,7 +393,7 @@ if(run_reg){
 }
 
 # marginal
-marg_canaper_fls <- list.files("output/canaper/", "canaper_marg_pr_tax", all.files = T, full.names = T)
+marg_canaper_fls <- list.files("output/canaper", "canaper_marg_pr_tax", all.files = T, full.names = T)
 marg_frc <- readr::parse_number(marg_canaper_fls)
 
 run_reg <- F
@@ -453,7 +453,7 @@ all_prun_res_df %>% select(-estimate) %>%
   geom_point(cex = .65, position = position_jitterdodge(jitter.width = .05, dodge.width = .05)) +
   geom_smooth(method = "lm") +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) +
-  labs(subtitle = "", x = "Proportion of tips pruned", y = "R-squared", color = "Pruning\nmethod") +
+  labs(subtitle = "Pruned", x = "Proportion of tips pruned", y = "R-squared", color = "Pruning\nmethod") +
   theme_classic(base_size = 12) + 
   theme(strip.background = element_blank(), legend.position = "top") +
   #scale_x_continuous(breaks = marg_frc, labels = as.character(marg_frc)) +
@@ -470,7 +470,7 @@ all_prun_res_df %>% select(-r.squared) %>%
   geom_smooth(method = "lm") +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) +
   #scale_colour_viridis_d(option = "plasma", begin = .75, end = .05 , alpha = .75) +
-  labs(subtitle = "", x = "Proportion of tips pruned", y = "Slope", color = "Pruning\nmethod") +
+  labs(subtitle = "Pruned", x = "Proportion of tips pruned", y = "Slope", color = "Pruning\nmethod") +
   theme_classic(base_size = 12)  + 
   theme(strip.background = element_blank(), legend.position = "top") +
   #scale_x_continuous(breaks = marg_frc, labels = as.character(marg_frc)) +
@@ -480,13 +480,13 @@ ggsave(filename = paste0("figures/slope_pruned.png"),
 
 # imputed random
 all_prun_rand_imp_res_df %>% select(-estimate) %>% 
-  gather(key, value, -sim_n, -samp_frac, -metric, -pruning) %>% 
+  gather(key, value, -sim_n, -samp_frac, -metric, -pruning, -imputation) %>% 
   mutate(pruning = str_to_title(pruning)) %>%
   ggplot(aes(x = (samp_frac), y = (value), col = pruning)) +
   #geom_hline(yintercept = log(.5), lty = 2, col = "darkgray") +
   geom_point(cex = .65, position = position_jitterdodge(jitter.width = .05, dodge.width = .05)) +
   geom_smooth(method = "lm") +
-  scale_colour_viridis_d(option = "magma", begin = .8, end = .05, alpha = .95) +
+  scale_color_manual(values = MetBrewer::met.brewer("Renoir", 3)) + 
   labs(subtitle = "Random imputation", x = "Proportion of tips pruned", y = "R-squared", color = "Pruning\nmethod") +
   theme_classic(base_size = 12) + 
   theme(strip.background = element_blank(), legend.position = "top") +
@@ -496,14 +496,13 @@ ggsave(filename = paste0("figures/r2_pruned_rand_imp.png"),
        width = 20, height = 25, units = "cm", dpi = 200)
 
 all_prun_rand_imp_res_df %>% select(-r.squared) %>% 
-  gather(key, value, -sim_n, -samp_frac, -metric, -pruning) %>% 
+  gather(key, value, -sim_n, -samp_frac, -metric, -pruning, -imputation) %>% 
   mutate(pruning = str_to_title(pruning)) %>%
   ggplot(aes(x = (samp_frac), y = value, col = pruning)) +
   geom_hline(yintercept = 1, lty = 2, col = "darkgray") +
   geom_point(cex = .65, position = position_jitterdodge(jitter.width = .05, dodge.width = .05)) +
   geom_smooth(method = "lm") +
-  scale_colour_viridis_d(option = "magma", begin = .8, end = .05, alpha = .95) +
-  #scale_colour_viridis_d(option = "plasma", begin = .75, end = .05 , alpha = .75) +
+  scale_color_manual(values = MetBrewer::met.brewer("Renoir", 3)) + 
   labs(subtitle = "Random imputation", x = "Proportion of tips pruned", y = "Slope", color = "Pruning\nmethod") +
   theme_classic(base_size = 12)  + 
   theme(strip.background = element_blank(), legend.position = "top") +
@@ -514,13 +513,13 @@ ggsave(filename = paste0("figures/slope_pruned_rand_imp.png"),
 
 # imputed taxonomic
 all_prun_tax_imp_res_df %>% select(-estimate) %>% 
-  gather(key, value, -sim_n, -samp_frac, -metric, -pruning) %>% 
+  gather(key, value, -sim_n, -samp_frac, -metric, -pruning, -imputation) %>% 
   mutate(pruning = str_to_title(pruning)) %>%
   ggplot(aes(x = (samp_frac), y = (value), col = pruning)) +
   #geom_hline(yintercept = log(.5), lty = 2, col = "darkgray") +
   geom_point(cex = .65, position = position_jitterdodge(jitter.width = .05, dodge.width = .05)) +
   geom_smooth(method = "lm") +
-  scale_colour_viridis_d(option = "viridis", begin = .8, end = .05, alpha = .95) +
+  scale_colour_viridis_d(option = "viridis", begin = .9, end = .05, alpha = .95) +
   labs(subtitle = "Taxonomic imputation", x = "Proportion of tips pruned", y = "R-squared", color = "Pruning\nmethod") +
   theme_classic(base_size = 12) + 
   theme(strip.background = element_blank(), legend.position = "top") +
@@ -530,13 +529,13 @@ ggsave(filename = paste0("figures/r2_pruned_tax_imp.png"),
        width = 20, height = 25, units = "cm", dpi = 200)
 
 all_prun_tax_imp_res_df %>% select(-r.squared) %>% 
-  gather(key, value, -sim_n, -samp_frac, -metric, -pruning) %>% 
+  gather(key, value, -sim_n, -samp_frac, -metric, -pruning, -imputation) %>% 
   mutate(pruning = str_to_title(pruning)) %>%
   ggplot(aes(x = (samp_frac), y = value, col = pruning)) +
   geom_hline(yintercept = 1, lty = 2, col = "darkgray") +
   geom_point(cex = .65, position = position_jitterdodge(jitter.width = .05, dodge.width = .05)) +
   geom_smooth(method = "lm") +
-  scale_colour_viridis_d(option = "viridis", begin = .8, end = .05, alpha = .95) +
+  scale_colour_viridis_d(option = "viridis", begin = .9, end = .05, alpha = .95) +
   #scale_colour_viridis_d(option = "plasma", begin = .75, end = .05 , alpha = .75) +
   labs(subtitle = "Taxonomic imputation", x = "Proportion of tips pruned", y = "Slope", color = "Pruning\nmethod") +
   theme_classic(base_size = 12)  + 
@@ -548,29 +547,65 @@ ggsave(filename = paste0("figures/slope_pruned_tax_imp.png"),
 
 # viz regs  ####
 library(ggpubr)
-late_canape_df2 <- readRDS(late_canaper_fls[4])[[25]]
+library(patchwork)
+late_canaper_fls <- list.files("output/canaper", "canaper_late_pr_tax", all.files = T, full.names = T)
+canape_df2 <- readRDS(late_canaper_fls[4])[[15]]
+canape_df3 <- readRDS(late_canaper_fls[4])[[32]]
+canape_df4 <- readRDS(late_canaper_fls[4])[[68]]
+canape_df5 <- readRDS(late_canaper_fls[4])[[97]]
 
 p1 <- emp_df %>% 
-  ggscatter(x = "pd_obs", y = "pd_obs") +
-  geom_point(cex = .5, col = "black") +
-  geom_smooth() +
+  ggscatter(x = "pd_obs", y = "pd_obs", color = "black", fill = "black", size = 1.5, alpha = .65) +
+  geom_smooth(lwd = .5) +
   stat_regline_equation(label.y = .54) +
   stat_cor(label.y = .52) +
-  labs(x = "PD observed full", y = "PD observed full") +
+  labs(subtitle = "Full dataset", x = "PD observed full", y = "PD observed full") +
   theme_classic()
 
-p2 <- data.frame(pd_obs_prun = late_canape_df2$pd_obs, 
+p2 <- data.frame(pd_obs_prun = canape_df2$pd_obs, 
                  pd_obs_emp = emp_df$pd_obs) %>% 
-  ggscatter(x = "pd_obs_emp", y = "pd_obs_prun") +
+  ggscatter(x = "pd_obs_emp", y = "pd_obs_prun", color = "black", fill = "black", size = .75, alpha = .85) +
   geom_abline(intercept = 0, slope = 1, col = "coral", lty = 2, lwd = 1) +
-  geom_point(cex = .5, col = "black") +
-  geom_smooth() +
-  stat_regline_equation(label.y = 1.45,) +
-  stat_cor(label.y = 1.4) + 
-  labs(x = "PD observed full", y = "PD observed pruned") +
+  geom_smooth(lwd = .5) +
+  stat_regline_equation(label.y = 1.45, cex = 3.5) +
+  stat_cor(label.y = 1.35, cex = 3.5) + 
+  labs(subtitle = "Simulation 15", x = "", y = "PD observed pruned") +
   theme_classic()
 
-ggarrange(p1, p2, ncol = 2, labels = c("A", "B"))
-ggsave(filename = paste0("figures/regs_comp2.png"), 
-       width = 25, height = 15, units = "cm", dpi = 200)
+p3 <- data.frame(pd_obs_prun = canape_df3$pd_obs, 
+                 pd_obs_emp = emp_df$pd_obs) %>% 
+  ggscatter(x = "pd_obs_emp", y = "pd_obs_prun", color = "black", fill = "black", size = .75, alpha = .85) +
+  geom_abline(intercept = 0, slope = 1, col = "coral", lty = 2, lwd = 1) +
+  geom_smooth(lwd = .5) +
+  stat_regline_equation(label.y = 1.45, cex = 3.5) +
+  stat_cor(label.y = 1.35, cex = 3.5) + 
+  labs(subtitle = "Simulation 32", x = "PD observed full", y = "PD observed pruned") +
+  theme_classic()
 
+p4 <- data.frame(pd_obs_prun = canape_df4$pd_obs, 
+                 pd_obs_emp = emp_df$pd_obs) %>% 
+  ggscatter(x = "pd_obs_emp", y = "pd_obs_prun", color = "black", fill = "black", size = .75, alpha = .85) +
+  geom_abline(intercept = 0, slope = 1, col = "coral", lty = 2, lwd = 1) +
+  geom_smooth(lwd = .5) +
+  stat_regline_equation(label.y = 1.45, cex = 3.5) +
+  stat_cor(label.y = 1.35, cex = 3.5) + 
+  labs(subtitle = "Simulation 68", x = "PD observed full", y = "PD observed pruned") +
+  theme_classic()
+
+p5 <- data.frame(pd_obs_prun = canape_df5$pd_obs, 
+                 pd_obs_emp = emp_df$pd_obs) %>% 
+  ggscatter(x = "pd_obs_emp", y = "pd_obs_prun", color = "black", fill = "black", size = .75, alpha = .85) +
+  geom_abline(intercept = 0, slope = 1, col = "coral", lty = 2, lwd = 1) +
+  geom_smooth(lwd = .5) +
+  stat_regline_equation(label.y = 1.45, cex = 3.5) +
+  stat_cor(label.y = 1.35, cex = 3.5) + 
+  labs(subtitle = "Simulation 97", x = "PD observed full", y = "PD observed pruned") +
+  theme_classic()
+
+p1 + p2 + p3 + p4 + p5 + 
+plot_layout(design = "AAAABBCC
+                      AAAADDEE")
+#ggarrange(p1, p2, ncol = 2, labels = c("A", "B"))
+ggsave(filename = paste0("figures/regs_comp.png"), 
+       width = 25, height = 25, units = "cm", dpi = 300)
+ 
