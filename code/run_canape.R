@@ -283,7 +283,7 @@ pttr <- "rand_pr_tax_imp_root" # "rand_pr_tax_imp_random"
 rand_fls <- list.files("output/imputed_trees", pttr, all.files = T, full.names = T)
 rand_frc <- readr::parse_number(rand_fls)
 
-if(run_rand_rand){
+if(run_rand_tax){
   for(i in 1:length(rand_fls)){
     rand_canaper_ls <- list()
     targ_tr_ls <- readRDS(rand_fls[i])
@@ -316,7 +316,7 @@ pttr <- "late_pr_tax_imp_root" # "late_pr_tax_imp_random"
 late_fls <- list.files("output/imputed_trees/", pttr, all.files = T, full.names = T)
 late_frc <- readr::parse_number(late_fls)
 
-if(run_late_rand){
+if(run_late_tax){
   for(i in 1:length(late_fls)){
     late_canaper_ls <- list()
     targ_tr_ls <- readRDS(late_fls[i])
@@ -351,7 +351,7 @@ pttr <- "marg_pr_tax_imp_root" # "marg_pr_tax_imp_random"
 marg_fls <- list.files("output/imputed_trees/", pttr, all.files = T, full.names = T)
 marg_frc <- readr::parse_number(marg_fls)
 
-if(run_marg_rand){
+if(run_marg_tax){
   for(i in 1:length(marg_fls)){
     marg_canaper_ls <- list()
     targ_tr_ls <- readRDS(marg_fls[i])
