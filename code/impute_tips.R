@@ -1,5 +1,5 @@
 library(tidyverse)
-library(phytools)
+library(phytools) 
 library(parallel)
 
 source("code/pe_samp_funs.R")
@@ -24,8 +24,8 @@ dir.create("output/imputed_trees/")
 
 run_rand_rand <- F ; run_late_rand <- F ; run_marg_rand <- F # pruned and randomly imputed trees
 run_rand_tax <- T  ; run_late_tax <- T  ; run_marg_tax <- T  # pruned and taxonomically imputed trees
-where2impt <- "root" # "random"
-n_cores <- 2
+meth2impt <- c("root", "random") 
+n_cores <- 3
 
 # add tips location at random ####
 # random pruned
@@ -74,12 +74,14 @@ if(run_marg_rand){
 }
 
 # add tips to based on taxonomy ####
+for(f in 1:length(meth2impt)){
+  where2impt <- meth2impt[f]
 # random pruned
 if(run_rand_tax){ 
   for(i in 1:length(rand_fls)){ 
     trees_ls <- readRDS(rand_fls[[i]]) # load set of trees
-      for(l in 1:length(trees_ls)){trees_ls[[l]]$node.label <- c()}
-    trees_ls <- mclapply(trees_ls, name_nodes, m_tax = tax_tbl, mc.cores = n_cores) # name nodes 
+     for(h in 1:length(trees_ls)){trees_ls[[h]]$node.label <- c()}
+     trees_ls <- mclapply(trees_ls, name_nodes, m_tax = tax_tbl, mc.cores = n_cores) # name nodes 
     
     targ_tr_ls <- trees_ls # set trees to impute
     tips2add_ls <- lapply(targ_tr_ls, function(X) setdiff(fern_tre$tip.label, X$tip.label)) # get missing tips per tree
@@ -92,40 +94,43 @@ if(run_rand_tax){
         
       gen_diff <- setdiff(gens2add, gens_tree) %>% sort # get the missing genera in the target tree that need to be imputed first
       
-      tps_gen_impt <- c()
+      tps_gen_impt <- c() ; impt_tps_vec <- c()
       if(length(gen_diff) > 0) { # if the genus is not in the tree, it needs to be imputed first
         for(j in 1:length(gen_diff)){
-          nd_where <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(family) %>% # get node to impute genus at family level
-            unique() %>% grepl(pattern = paste0("^", . , "$"), x = targ_tr_ls[[k]]$node.label) %>% which
+          nd_where <- node2where(gen = gen_diff[j], tree = targ_tr_ls[[k]]) # get the nodes to impute genus
+          tps_2add <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(tip_names) # get tips to impute per genus
           
-          ifelse(test = !is_empty(nd_where), yes = print(paste0("Imputed at family level")), 
-                 no = { nd_where <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(order) %>% # get node to impute genus at order
-                   unique() %>% grepl(pattern = paste0("^", . , "$"), x = targ_tr_ls[[k]]$node.label) %>% 
-                   which ; ifelse(!is_empty(nd_where), yes = print(paste0("Imputed at order level")),
-                                  no = {nd_where <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(class) %>%  # get node to impute genus at class
-                                    unique() %>% grepl(pattern = paste0("^", . , "$"), x = targ_tr_ls[[k]]$node.label) %>% 
-                                    which ; ifelse(test = is_empty(nd_where), 
-                                                   yes = {nd_where <- 1 ; print(paste0("Imputed at root node"))},
-                                                   no = print(paste0("Imputed at class level")))
-                                  }
-                   )
-                 }
-          )
-          
-          tps_2add <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(tip_names)
-          targ_tr_ls[[k]] <- bind.tip(tree = targ_tr_ls[[k]], tip.label = tps_2add[1], where = c(Ntip(trees_ls[[k]])+nd_where)) # adds the first tip/genus
-          tps_gen_impt[j] <- tps_2add[1]
-        }
-        impt_tips <- setdiff(tips2add_ls[[k]], tps_gen_impt)
-        #targ_tr_ls[[k]] <- add.species.to.genus(tree = targ_tr_ls[[k]], species = impt_tips, where = "root")
-        for(l in 1:length(impt_tips)){
-          targ_tr_ls[[k]] <- add.species.to.genus(tree = targ_tr_ls[[k]], species = impt_tips[l], where = where2impt)
+          # impute the first tip per genus to anchor the clade
+          if(length(tps_2add) > 1) {  # in case of more than one tip
+            targ_tr_ls[[k]] <- TreeTools::AddTip(tree = targ_tr_ls[[k]], 
+                                                 where = c(Ntip(targ_tr_ls[[k]]) + nd_where), label = tps_2add[1]) %>% 
+              castor::extend_tree_to_height() %>% .$tree
+            for(l in 2:length(tps_2add)){ # then impute the other tips in the same genus
+              tem_tr <- add.species.to.genus(tree = targ_tr_ls[[k]], 
+                                             species = tps_2add[l], where = where2impt)
+              if(is.ultrametric(tem_tr)) {targ_tr_ls[[k]] <- tem_tr} else {targ_tr_ls[[k]] <- force.ultrametric(tem_tr, method = "nnls", message = F)}
+            }
+          } else { # in case of one tip per genus
+            targ_tr_ls[[k]] <- TreeTools::AddTip(tree = targ_tr_ls[[k]], 
+                                                 where = c(Ntip(targ_tr_ls[[k]]) + nd_where), label = tps_2add) %>% 
+              castor::extend_tree_to_height() %>% .$tree
           }
+          impt_tps_vec[[k]] <- c(impt_tps_vec[[k]], tps_2add)
+        }
+        
+        tips2add_ls[[k]] <- setdiff(tips2add_ls[[k]], impt_tps_vec[[k]]) %>% sort
+        for(l in 1:length(tips2add_ls[[k]])){
+          tem_tr <- add.species.to.genus(tree = targ_tr_ls[[k]], 
+                                         species = tips2add_ls[[k]][l], where = where2impt)
+          if(is.ultrametric(tem_tr)) {targ_tr_ls[[k]] <- tem_tr} else {targ_tr_ls[[k]] <- force.ultrametric(tem_tr, method = "nnls", message = F)}
+        }
 
       } else { # otherwise impute species to genus already in the tree
-        #targ_tr_ls[[k]] <- add.species.to.genus(targ_tr_ls[[k]], tips2add_ls[[k]], where = "random")
         for(l in 1:length(tips2add_ls[[k]])){
-          targ_tr_ls[[k]] <- add.species.to.genus(tree = targ_tr_ls[[k]], species = tips2add_ls[[k]][l], where = where2impt)
+          tem_tr <- add.species.to.genus(tree = targ_tr_ls[[k]], 
+                                         species = tips2add_ls[[k]][l], where = where2impt)
+          if(is.ultrametric(tem_tr)) {targ_tr_ls[[k]] <- tem_tr} else {targ_tr_ls[[k]] <- force.ultrametric(tem_tr, method = "nnls", message = F)}
+          
           }
       }
       ifelse(targ_tr_ls[[k]]$tip.label %in% fern_tre$tip.label %>% sum == length(fern_tre$tip.label), 
@@ -151,7 +156,7 @@ sapply(targ_tr_ls, is.ultrametric) #%>% table()
 if(run_late_tax){ 
   for(i in 1:length(late_fls)){ 
     trees_ls <- readRDS(late_fls[[i]]) # load set of trees
-      for(l in 1:length(trees_ls)){trees_ls[[l]]$node.label <- c()}
+    for(h in 1:length(trees_ls)){trees_ls[[h]]$node.label <- c()}
     trees_ls <- mclapply(trees_ls, name_nodes, m_tax = tax_tbl, mc.cores = n_cores) # name nodes 
     
     targ_tr_ls <- trees_ls # set trees to impute
@@ -165,40 +170,43 @@ if(run_late_tax){
       
       gen_diff <- setdiff(gens2add, gens_tree) %>% sort # get the missing genera in the target tree that need to be imputed first
       
-      tps_gen_impt <- c()
+      tps_gen_impt <- c() ; impt_tps_vec <- c()
       if(length(gen_diff) > 0) { # if the genus is not in the tree, it needs to be imputed first
         for(j in 1:length(gen_diff)){
-          nd_where <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(family) %>% # get node to impute genus at family level
-            unique() %>% grepl(pattern = paste0("^", . , "$"), x = targ_tr_ls[[k]]$node.label) %>% which
+          nd_where <- node2where(gen = gen_diff[j], tree = targ_tr_ls[[k]]) # get the nodes to impute genus
+          tps_2add <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(tip_names) # get tips to impute per genus
           
-          ifelse(test = !is_empty(nd_where), yes = print(paste0("Imputed at family level")), 
-                 no = { nd_where <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(order) %>% # get node to impute genus at order
-                   unique() %>% grepl(pattern = paste0("^", . , "$"), x = targ_tr_ls[[k]]$node.label) %>% 
-                   which ; ifelse(!is_empty(nd_where), yes = print(paste0("Imputed at order level")),
-                                  no = {nd_where <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(class) %>%  # get node to impute genus at class
-                                    unique() %>% grepl(pattern = paste0("^", . , "$"), x = targ_tr_ls[[k]]$node.label) %>% 
-                                    which ; ifelse(test = is_empty(nd_where), 
-                                                   yes = {nd_where <- 1 ; print(paste0("Imputed at root node"))},
-                                                   no = print(paste0("Imputed at class level")))
-                                  }
-                   )
-                 }
-          )
-          
-          tps_2add <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(tip_names)
-          targ_tr_ls[[k]] <- bind.tip(tree = targ_tr_ls[[k]], tip.label = tps_2add[1], where = c(Ntip(trees_ls[[k]])+nd_where)) # adds the first tip/genus
-          tps_gen_impt[j] <- tps_2add[1]
+          # impute the first tip per genus to anchor the clade
+          if(length(tps_2add) > 1) {  # in case of more than one tip
+            targ_tr_ls[[k]] <- TreeTools::AddTip(tree = targ_tr_ls[[k]], 
+                                      where = c(Ntip(targ_tr_ls[[k]]) + nd_where), label = tps_2add[1]) %>% 
+              castor::extend_tree_to_height() %>% .$tree
+            for(l in 2:length(tps_2add)){ # then impute the other tips in the same genus
+              tem_tr <- add.species.to.genus(tree = targ_tr_ls[[k]], 
+                                             species = tps_2add[l], where = where2impt)
+              if(is.ultrametric(tem_tr)) {targ_tr_ls[[k]] <- tem_tr} else {targ_tr_ls[[k]] <- force.ultrametric(tem_tr, method = "nnls", message = F)}
+            }
+          } else { # in case of one tip per genus
+            targ_tr_ls[[k]] <- TreeTools::AddTip(tree = targ_tr_ls[[k]], 
+                                                 where = c(Ntip(targ_tr_ls[[k]]) + nd_where), label = tps_2add) %>% 
+              castor::extend_tree_to_height() %>% .$tree
+          }
+          impt_tps_vec[[k]] <- c(impt_tps_vec[[k]], tps_2add)
         }
-        impt_tips <- setdiff(tips2add_ls[[k]], tps_gen_impt)
-        #targ_tr_ls[[k]] <- add.species.to.genus(tree = targ_tr_ls[[k]], species = impt_tips, where = "root")
-        for(l in 1:length(impt_tips)){
-          targ_tr_ls[[k]] <- add.species.to.genus(tree = targ_tr_ls[[k]], species = impt_tips[l], where = where2impt)
+        
+        tips2add_ls[[k]] <- setdiff(tips2add_ls[[k]], impt_tps_vec[[k]]) %>% sort
+        for(l in 1:length(tips2add_ls[[k]])){
+          tem_tr <- add.species.to.genus(tree = targ_tr_ls[[k]], 
+                                         species = tips2add_ls[[k]][l], where = where2impt)
+          if(is.ultrametric(tem_tr)) {targ_tr_ls[[k]] <- tem_tr} else {targ_tr_ls[[k]] <- force.ultrametric(tem_tr, method = "nnls", message = F)}
         }
         
       } else { # otherwise impute species to genus already in the tree
-        #targ_tr_ls[[k]] <- add.species.to.genus(targ_tr_ls[[k]], tips2add_ls[[k]], where = "random")
         for(l in 1:length(tips2add_ls[[k]])){
-          targ_tr_ls[[k]] <- add.species.to.genus(tree = targ_tr_ls[[k]], species = tips2add_ls[[k]][l], where = where2impt)
+          tem_tr <- add.species.to.genus(tree = targ_tr_ls[[k]], 
+                                         species = tips2add_ls[[k]][l], where = where2impt)
+          if(is.ultrametric(tem_tr)) {targ_tr_ls[[k]] <- tem_tr} else {targ_tr_ls[[k]] <- force.ultrametric(tem_tr, method = "nnls", message = F)}
+          
         }
       }
       ifelse(targ_tr_ls[[k]]$tip.label %in% fern_tre$tip.label %>% sum == length(fern_tre$tip.label), 
@@ -215,6 +223,7 @@ if(run_late_tax){
     sapply(targ_tr_ls, Ntip) %>% table() %>%  print
   }
 }
+
 sapply(targ_tr_ls, Ntip)
 sapply(targ_tr_ls, is.rooted) #%>% table()
 sapply(targ_tr_ls, is.ultrametric)# %>% table()
@@ -223,7 +232,7 @@ sapply(targ_tr_ls, is.ultrametric)# %>% table()
 if(run_marg_tax){ 
   for(i in 1:length(marg_fls)){ 
     trees_ls <- readRDS(marg_fls[[i]]) # load set of trees
-    for(l in 1:length(trees_ls)){trees_ls[[l]]$node.label <- c()}
+    for(h in 1:length(trees_ls)){trees_ls[[h]]$node.label <- c()}
     trees_ls <- mclapply(trees_ls, name_nodes, m_tax = tax_tbl, mc.cores = n_cores) # name nodes 
     
     targ_tr_ls <- trees_ls # set trees to impute
@@ -237,40 +246,43 @@ if(run_marg_tax){
       
       gen_diff <- setdiff(gens2add, gens_tree) %>% sort # get the missing genera in the target tree that need to be imputed first
       
-      tps_gen_impt <- c()
+      tps_gen_impt <- c() ; impt_tps_vec <- c()
       if(length(gen_diff) > 0) { # if the genus is not in the tree, it needs to be imputed first
         for(j in 1:length(gen_diff)){
-          nd_where <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(family) %>% # get node to impute genus at family level
-            unique() %>% grepl(pattern = paste0("^", . , "$"), x = targ_tr_ls[[k]]$node.label) %>% which
+          nd_where <- node2where(gen = gen_diff[j], tree = targ_tr_ls[[k]]) # get the nodes to impute genus
+          tps_2add <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(tip_names) # get tips to impute per genus
           
-          ifelse(test = !is_empty(nd_where), yes = print(paste0("Imputed at family level")), 
-                 no = { nd_where <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(order) %>% # get node to impute genus at order
-                   unique() %>% grepl(pattern = paste0("^", . , "$"), x = targ_tr_ls[[k]]$node.label) %>% 
-                   which ; ifelse(!is_empty(nd_where), yes = print(paste0("Imputed at order level")),
-                                  no = {nd_where <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(class) %>%  # get node to impute genus at class
-                                    unique() %>% grepl(pattern = paste0("^", . , "$"), x = targ_tr_ls[[k]]$node.label) %>% 
-                                    which ; ifelse(test = is_empty(nd_where), 
-                                                   yes = {nd_where <- 1 ; print(paste0("Imputed at root node"))},
-                                                   no = print(paste0("Imputed at class level")))
-                                  }
-                   )
-                 }
-          )
-          
-          tps_2add <- tax_tbl %>% filter(genus == gen_diff[j]) %>% pull(tip_names)
-          targ_tr_ls[[k]] <- bind.tip(tree = targ_tr_ls[[k]], tip.label = tps_2add[1], where = c(Ntip(trees_ls[[k]])+nd_where)) # adds the first tip/genus
-          tps_gen_impt[j] <- tps_2add[1]
+          # impute the first tip per genus to anchor the clade
+          if(length(tps_2add) > 1) {  # in case of more than one tip
+            targ_tr_ls[[k]] <- TreeTools::AddTip(tree = targ_tr_ls[[k]], 
+                                      where = c(Ntip(targ_tr_ls[[k]]) + nd_where), label = tps_2add[1]) %>% 
+              castor::extend_tree_to_height() %>% .$tree
+            for(l in 2:length(tps_2add)){ # then impute the other tips in the same genus
+              tem_tr <- add.species.to.genus(tree = targ_tr_ls[[k]], 
+                                             species = tps_2add[l], where = where2impt)
+              if(is.ultrametric(tem_tr)) {targ_tr_ls[[k]] <- tem_tr} else {targ_tr_ls[[k]] <- force.ultrametric(tem_tr, method = "nnls", message = F)}
+            }
+          } else { # in case of one tip per genus
+            targ_tr_ls[[k]] <- TreeTools::AddTip(tree = targ_tr_ls[[k]], 
+                                                 where = c(Ntip(targ_tr_ls[[k]]) + nd_where), label = tps_2add) %>% 
+              castor::extend_tree_to_height() %>% .$tree
+          }
+          impt_tps_vec[[k]] <- c(impt_tps_vec[[k]], tps_2add)
         }
-        impt_tips <- setdiff(tips2add_ls[[k]], tps_gen_impt)
-        #targ_tr_ls[[k]] <- add.species.to.genus(tree = targ_tr_ls[[k]], species = impt_tips, where = "root")
-        for(l in 1:length(impt_tips)){
-          targ_tr_ls[[k]] <- add.species.to.genus(tree = targ_tr_ls[[k]], species = impt_tips[l], where = where2impt)
+        
+        tips2add_ls[[k]] <- setdiff(tips2add_ls[[k]], impt_tps_vec[[k]]) %>% sort
+        for(l in 1:length(tips2add_ls[[k]])){
+          tem_tr <- add.species.to.genus(tree = targ_tr_ls[[k]], 
+                                         species = tips2add_ls[[k]][l], where = where2impt)
+          if(is.ultrametric(tem_tr)) {targ_tr_ls[[k]] <- tem_tr} else {targ_tr_ls[[k]] <- force.ultrametric(tem_tr, method = "nnls", message = F)}
         }
         
       } else { # otherwise impute species to genus already in the tree
-        #targ_tr_ls[[k]] <- add.species.to.genus(targ_tr_ls[[k]], tips2add_ls[[k]], where = "random")
         for(l in 1:length(tips2add_ls[[k]])){
-          targ_tr_ls[[k]] <- add.species.to.genus(tree = targ_tr_ls[[k]], species = tips2add_ls[[k]][l], where = where2impt)
+          tem_tr <- add.species.to.genus(tree = targ_tr_ls[[k]], 
+                                         species = tips2add_ls[[k]][l], where = where2impt)
+          if(is.ultrametric(tem_tr)) {targ_tr_ls[[k]] <- tem_tr} else {targ_tr_ls[[k]] <- force.ultrametric(tem_tr, method = "nnls", message = F)}
+          
         }
       }
       ifelse(targ_tr_ls[[k]]$tip.label %in% fern_tre$tip.label %>% sum == length(fern_tre$tip.label), 
@@ -292,25 +304,130 @@ sapply(targ_tr_ls, Ntip)
 sapply(targ_tr_ls, is.rooted)# %>% table()
 sapply(targ_tr_ls, is.ultrametric)# %>% table()
 
-# vis comparative trees ####
-library(ggtree) ; library(ggpubr)
-t1 <- fern_tre %>% 
-  ggtree(layout = "roundrect", ladderize = F) + 
-  geom_nodepoint(size = .58, alpha = .55) +
-  labs(subtitle = "Full tree")
-t2 <- trees_ls[[10]] %>% 
-  ggtree(layout = "roundrect", ladderize = F) +
-  geom_nodepoint(size = .58, alpha = .55)  +
-  labs(subtitle = "Pruned tree")
-t3 <- targ_tr_ls[[10]] %>% 
-  ggtree(layout = "roundrect", ladderize = F) +
-  geom_nodepoint(size = .58, alpha = .55)  +
-  labs(subtitle = "Imputed tree")
+print(paste0("END ", where2impt, " imputation"))
+}
 
-ggarrange(t1, t2, t3, ncol = 3 #, labels = c("A", "B", "C")
-)
-ggsave(filename = paste0("figures/comp_trees.pdf"), 
-       width = 35, height = 25, units = "cm", dpi = 300)
+# vis comparative trees ####
+library(ggtree) ; library(patchwork)
+# pruned trees
+rand_prun_tree <- readRDS(rand_fls[[3]])[[10]] 
+late_prun_tree <- readRDS(late_fls[[3]])[[10]]
+marg_prun_tree <- readRDS(marg_fls[[4]])[[10]]
+
+# taxonomic at node imputation
+rand_tax_imp_tree <- readRDS(paste0("output/imputed_trees/rand_pr_tax_imp_root_",  rand_frc[3], ".rds"))[[10]]
+late_tax_imp_tree <- readRDS(paste0("output/imputed_trees/late_pr_tax_imp_root_",  late_frc[3], ".rds"))[[10]]
+marg_tax_imp_tree <- readRDS(paste0("output/imputed_trees/marg_pr_tax_imp_root_",  marg_frc[4], ".rds"))[[10]]
+
+# taxonomic at random within
+rand_tax_imp_rand_tree <- readRDS(paste0("output/imputed_trees/rand_pr_tax_imp_random_",  rand_frc[3], ".rds"))[[10]]
+late_tax_imp_rand_tree <- readRDS(paste0("output/imputed_trees/late_pr_tax_imp_random_",  late_frc[3], ".rds"))[[10]]
+marg_tax_imp_rand_tree <- readRDS(paste0("output/imputed_trees/marg_pr_tax_imp_random_",  marg_frc[4], ".rds"))[[10]]
+
+typ_tre <- "rectangular" # "fan" #"roundrect" # 
+
+# full tree
+fern_full <- fern_tre %>% 
+  ggtree(layout = typ_tre, ladderize = T, size = .2) + 
+  geom_nodepoint(size = .25, alpha = .55) +
+  labs(title = "Full tree")
+
+# Randomly pruned
+rand_prn_ls <- list(pruned = setdiff(fern_tre$tip.label, rand_prun_tree$tip.label), 
+                    keept = intersect(fern_tre$tip.label, rand_prun_tree$tip.label))
+
+t1.1 <- fern_tre %>% 
+  ggtree(layout = typ_tre, ladderize = T, size = .2) +
+  geom_nodepoint(size = .15, alpha = .55)  +
+  labs(title = "Random pruning (30%)") #+ geom_tiplab(aes(subset = label %in% grp1$pruned), color = 'firebrick', size = 1.2)
+ 
+ran_prn <- groupOTU(t1.1, rand_prn_ls, 'tips') + aes(color = tips) +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("black", "red"))
+
+# Randomly pruned and taxonomically imputed (at node)
+rand_prn_ls <- list(imputed = setdiff(fern_tre$tip.label, rand_prun_tree$tip.label), 
+                    keept = intersect(fern_tre$tip.label, rand_prun_tree$tip.label))
+t2.1 <- rand_tax_imp_tree %>% 
+  ggtree(layout = typ_tre, ladderize = T, size = .2) +
+  geom_nodepoint(size = .15, alpha = .55)  +
+  labs(title = "Random pruning (30%)", subtitle = "Taxonomic imputed (node)") #+ geom_tiplab(aes(subset = label %in% grp2$imputed), color = 'firebrick', size = 1.2) #+ scale_x_reverse()
+
+ran_prn_nd_imp <- groupOTU(t2.1, rand_prn_ls, 'tips') + aes(color = tips) + 
+  theme(legend.position = "none") + 
+  scale_color_manual(values = c("red", "black")) 
+
+# Randomly pruned and taxonomically imputed (randomly within)
+t3.1 <- rand_tax_imp_rand_tree %>% 
+  ggtree(layout = typ_tre, ladderize = T, size = .2) +
+  geom_nodepoint(size = .15, alpha = .55)  +
+  labs(title = "Random pruning (30%)", subtitle = "Taxonomic imputed (binary)") #+ geom_tiplab(aes(subset = label %in% grp4$imputed), color = 'firebrick', size = 1.2)
+
+ran_prn_bin <- groupOTU(t3.1, rand_prn_ls, 'tips') + aes(color = tips) +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("red", "black"))
+
+# Lateraly pruned 
+late_prn_ls <- list(pruned = setdiff(fern_tre$tip.label, late_prun_tree$tip.label), 
+                    keept = intersect(fern_tre$tip.label, late_prun_tree$tip.label))
+
+t1.2 <- fern_tre %>% 
+  ggtree(layout = typ_tre, ladderize = T, size = .2) +
+  geom_nodepoint(size = .15, alpha = .55)  +
+  labs(title = "Lateral pruning (30%)") #+ geom_tiplab(aes(subset = label %in% grp1$pruned), color = 'firebrick', size = 1.2)
+
+late_prn <- groupOTU(t1.2, late_prn_ls, 'tips') + aes(color = tips) +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("black", "red"))
+
+# Lateraly pruned and taxonomically imputed (at node)
+late_prn_ls <- list(imputed = setdiff(fern_tre$tip.label, late_prun_tree$tip.label), 
+                    keept = intersect(fern_tre$tip.label, late_prun_tree$tip.label))
+
+t2.2 <- late_tax_imp_tree %>% 
+  ggtree(layout = typ_tre, ladderize = T, size = .2) +
+  geom_nodepoint(size = .15, alpha = .55)  +
+  labs(title = "Lateral pruning (30%)", subtitle = "Taxonomic imputed (node)")
+
+late_prn_nd_imp <- groupOTU(t2.2, late_prn_ls, 'tips') + aes(color = tips) + 
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("red", "black"))
+
+# Lateraly pruned and taxonomically imputed (randomly within)
+t3.2 <- late_tax_imp_rand_tree %>% 
+  ggtree(layout = typ_tre, ladderize = T, size = .2) +
+  geom_nodepoint(size = .15, alpha = .55)  +
+  labs(title = "Lateral pruning (30%)", subtitle = "Taxonomic imputed (binary)") #+ geom_tiplab(aes(subset = label %in% grp4$imputed), color = 'firebrick', size = 1.2)
+
+late_prn_bin <- groupOTU(t3.2, late_prn_ls, 'tips') + aes(color = tips) +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("red", "black"))
+
+if(typ_tre == "fan"){
+  pl_lay <- "
+  AABB
+  AABB
+  CCDD
+  CCDD
+  "
+} else {
+  pl_lay <- "
+  AA#BBCCDD
+  AA#BBCCDD
+  AA#BBCCDD
+  "
+}
+
+# random pruning
+free(fern_full) + free(ran_prn) + free(ran_prn_nd_imp) + free(ran_prn_bin) + 
+  plot_layout(guides = "collect", design = pl_lay, axis_titles = "collect", tag_level = "keep")
+ggsave(filename = paste0("figures/comp_trees_rand_prn.pdf"), 
+       width = 30, height = 15, units = "cm", dpi = 200)
+# lateral pruning 
+free(fern_full) + free(late_prn) + free(late_prn_nd_imp) + free(late_prn_bin) +
+  plot_layout(guides = "collect", design = pl_lay, axis_titles = "collect", tag_level = "keep")
+ggsave(filename = paste0("figures/comp_trees_late_prn.pdf"), 
+       width = 30, height = 15, units = "cm", dpi = 200)
 
 # check tips were imputed ok ####
 k = 6
