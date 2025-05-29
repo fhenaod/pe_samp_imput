@@ -25,6 +25,23 @@ thres2cats=function(x){
          ifelse(x %in% c("> 0.975", "> 0.99"), "sig_high", "non_sig"))
 }
 
+# retrieves a result category based on comparing the type of result from the treatment and the full dataset
+res_type=function(sign_cat, sign_cat_emp){
+  ifelse(sign_cat == "sig_low" & sign_cat_emp == "sig_low", "true_positive", 
+         ifelse(sign_cat == "sig_high" & sign_cat_emp == "sig_high", "true_positive", 
+                ifelse(sign_cat == "non_sig" & sign_cat_emp %in% c("sig_low","sig_high"), "type_2", 
+                       ifelse(sign_cat == "non_sig" & sign_cat_emp == "non_sig", "true_negative", 
+                              ifelse(sign_cat == "n_a" & sign_cat_emp %in% c("sig_low","sig_high"), "inconclusive",
+                                     ifelse(sign_cat %in% c("sig_low","sig_high") & sign_cat_emp == "non_sig", "type_1", 
+                                            ifelse(sign_cat == "sig_low" & sign_cat_emp == "sig_high" |
+                                                   sign_cat == "sig_hig" & sign_cat_emp == "sig_low", "switched", "inconclusive")
+                                            )
+                                     )
+                              )
+                       )
+                )
+         )
+  }
 
 # names nodes in a tree based on a taxonomic table for that tree 
 name_nodes=function(tree, m_tax){
@@ -75,4 +92,34 @@ name_nodes=function(tree, m_tax){
   return(tree)
 }
 
+# get label number from tree to impute a genus based on taxonomic table and a node-named tree
+node2where=function(gen, tree){
+  gen_tab <- filter(tax_tbl, genus == gen)[1,]
+  
+  nd_ls <- list(
+    family = grepl(pattern = paste0("^", gen_tab$family, "$"), x = tree$node.label) %>% which, 
+    order = grepl(pattern = paste0("^", gen_tab$order , "$"), x = tree$node.label) %>% which,
+    class = grepl(pattern = paste0("^", gen_tab$class , "$"), x = tree$node.label) %>% which
+    )
+  
+  if(!is_empty(nd_ls$family)){
+    nd_where <- nd_ls$family ; print("Imputed at family level")
+  } else {
+    if(!is_empty(nd_ls$order)) {
+      nd_where <- nd_ls$order ; print("Imputed at order level")
+    } else {
+      if(!is_empty(nd_ls$class)) {
+        nd_where <- nd_ls$class ; print("Imputed at class level")
+      } else {
+        nd_where <- 2 ; cat("Imputed close to root node")
+      }
+    }
+  }
+  
+  if(length(nd_where) > 1) {
+    print(paste0("WARNING !! ", length(nd_where), " matched named nodes, selected the closest to the root"))
+    nd_where <- nd_where[1]
+  } else {}
+  return(nd_where)
+}
 
