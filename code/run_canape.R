@@ -345,7 +345,7 @@ for(f in 1:length(pttr)){
         late_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
         print(paste0("iteration: ", i, "-",  j))
       }
-      late_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_", pttr, "_", late_frc[i],".rds"))
+      late_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_", pttr[f], "_", late_frc[i],".rds"))
       gc()
     }
   } else {}
