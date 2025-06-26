@@ -15,7 +15,7 @@ colnames(fern_com) <- sub(pattern = "(\\_.*?)\\_", "\\1-", colnames(fern_com))
 # missing taxa in tree
 fern_com %>% colnames() %in% fern_tre$tip.label %>% table()
 
-#  canaper control pars ####
+# canaper control pars ####
 dir.create("output/canaper/")
 
 run_iter <- F
@@ -386,4 +386,3 @@ for(f in 1:length(pttr)){
   } else {}
   cat(paste0("END: ", pttr[f]))
 }
-

@@ -3,7 +3,12 @@ library(geiger)
 
 source("code/pe_samp_funs.R")
 
-#load tree
+# load data ####
+# load community matrix
+fern_com <- read.csv("data/nitta-et-al/japan_ferns_comm_full.csv", header = T) %>% 
+  column_to_rownames("grids")
+
+# load tree
 fern_tre <- read.tree("output/nitta_node-named.tre") 
 is.binary(fern_tre) ; is.ultrametric(fern_tre)
 targ_tre <- fern_tre
@@ -11,7 +16,7 @@ targ_tre <- fern_tre
 dir.create("output/pruned_trees/")
 
 # random pruning ####
-samp_prop <- c(.05, .15,.3, .5) ; n_reps <- 100
+samp_prop <- c(.05, .15, .3, .5) ; n_reps <- 100
 
 prn_trs <- list()
 for(j in 1:length(samp_prop)){
@@ -27,7 +32,7 @@ prn_trs %>% saveRDS(paste0("output/pruned_trees/rand_pruned_trs_", samp_prop[j],
 
 # sim character ####
 n_reps <- 100
-run_char <- F
+run_char <- T
 if(run_char){
   sim_char <- sim.char(targ_tre, par = .2, nsim = n_reps, model = "BM")
   sim_char %>% saveRDS("output/sim_char_bm.rds")
