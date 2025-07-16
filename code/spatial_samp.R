@@ -251,10 +251,6 @@ for(f in 1:length(meth2impt)){
   print(paste0("END ", where2impt, " imputation"))
 }
 
-
-
-
-
 # run canaper ####
 library(canaper)
 library(future)
@@ -320,9 +316,10 @@ if(run_late){
       canape_res <- cpr_classify_endem(rand_test)
       sig_list <- list(canape_res, 
                        cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif")
+                       #, 
+                       #cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
+                       #cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
       )
       
       late_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
@@ -355,9 +352,10 @@ if(run_marg){
       canape_res <- cpr_classify_endem(rand_test)
       sig_list <- list(canape_res, 
                        cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif")
+                       #, 
+                       #cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
+                       #cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
       )
       
       marg_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
@@ -380,7 +378,7 @@ if(run_late_rand){
     late_canaper_ls <- list()
     targ_tr_ls <- readRDS(late_fls[i])
     
-    ifelse(sapply(targ_tr_ls, Ntip) %>% max() <= Ntip(fern_tre), "Ok n tips", stop(print("Error")))
+    ifelse(Ntip(targ_tr_ls) %>% max() <= Ntip(fern_tre), "Ok n tips", stop(print("Error")))
     
       ifelse(sum(names(occ_mat) %in% targ_tr_ls$tip.label) < 30, next, "")
       rand_test <- cpr_rand_test(occ_mat, targ_tr_ls, 
@@ -392,9 +390,9 @@ if(run_late_rand){
       canape_res <- cpr_classify_endem(rand_test)
       sig_list <- list(canape_res, 
                        cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif")
-                       #, cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       #cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"),
+                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
       )
       
       late_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
@@ -425,9 +423,9 @@ if(run_marg_rand){
       canape_res <- cpr_classify_endem(rand_test)
       sig_list <- list(canape_res, 
                        cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif")
-                       #, cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       #cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
+                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
       )
       
       marg_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
@@ -450,7 +448,7 @@ for(f in 1:length(pttr)){
       late_canaper_ls <- list()
       targ_tr_ls <- readRDS(late_fls[i])
       
-      ifelse(sapply(targ_tr_ls, Ntip) %>% max() <= Ntip(fern_tre), "Ok n tips", stop(print("Error")))
+      ifelse(Ntip(targ_tr_ls) %>% max() <= Ntip(fern_tre), "Ok n tips", stop(print("Error")))
       
         ifelse(sum(names(occ_mat) %in% targ_tr_ls$tip.label) < 30, next, "")
         rand_test <- cpr_rand_test(occ_mat, targ_tr_ls, 
