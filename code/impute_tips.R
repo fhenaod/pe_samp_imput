@@ -307,127 +307,26 @@ sapply(targ_tr_ls, is.ultrametric)# %>% table()
 print(paste0("END ", where2impt, " imputation"))
 }
 
-# vis comparative trees ####
-library(ggtree) ; library(patchwork)
-# pruned trees
-rand_prun_tree <- readRDS(rand_fls[[3]])[[10]] 
-late_prun_tree <- readRDS(late_fls[[3]])[[10]]
-marg_prun_tree <- readRDS(marg_fls[[4]])[[10]]
+## viz tree with geological timeline ####
+library(deeptime)
+fern_tre %>% 
+  ggtree(layout = "fan", ladderize = T, size = .2) + 
+  gggeo_scale(
+    time_scale = "periods", # Or use "eras", "epochs", etc.
+    pos = "bottom", # Position of the timescale
+    offset = 0.5  # Space between tree and timescale
+  )
 
-# taxonomic at node imputation
-rand_tax_imp_tree <- readRDS(paste0("output/imputed_trees/rand_pr_tax_imp_root_",  rand_frc[3], ".rds"))[[10]]
-late_tax_imp_tree <- readRDS(paste0("output/imputed_trees/late_pr_tax_imp_root_",  late_frc[3], ".rds"))[[10]]
-marg_tax_imp_tree <- readRDS(paste0("output/imputed_trees/marg_pr_tax_imp_root_",  marg_frc[4], ".rds"))[[10]]
-
-# taxonomic at random within
-rand_tax_imp_rand_tree <- readRDS(paste0("output/imputed_trees/rand_pr_tax_imp_random_",  rand_frc[3], ".rds"))[[10]]
-late_tax_imp_rand_tree <- readRDS(paste0("output/imputed_trees/late_pr_tax_imp_random_",  late_frc[3], ".rds"))[[10]]
-marg_tax_imp_rand_tree <- readRDS(paste0("output/imputed_trees/marg_pr_tax_imp_random_",  marg_frc[4], ".rds"))[[10]]
-
-typ_tre <- "rectangular" # "fan" #"roundrect" # 
-
-# full tree
-fern_full <- fern_tre %>% 
-  ggtree(layout = typ_tre, ladderize = T, size = .2) + 
-  geom_nodepoint(size = .25, alpha = .55) +
-  labs(title = "Full tree")
-
-# Randomly pruned
-rand_prn_ls <- list(pruned = setdiff(fern_tre$tip.label, rand_prun_tree$tip.label), 
-                    keept = intersect(fern_tre$tip.label, rand_prun_tree$tip.label))
-
-t1.1 <- fern_tre %>% 
-  ggtree(layout = typ_tre, ladderize = T, size = .2) +
-  geom_nodepoint(size = .15, alpha = .55)  +
-  labs(title = "Random pruning (30%)") #+ geom_tiplab(aes(subset = label %in% grp1$pruned), color = 'firebrick', size = 1.2)
- 
-ran_prn <- groupOTU(t1.1, rand_prn_ls, 'tips') + aes(color = tips) +
-  theme(legend.position = "none") +
-  scale_color_manual(values = c("black", "red"))
-
-# Randomly pruned and taxonomically imputed (at node)
-rand_prn_ls <- list(imputed = setdiff(fern_tre$tip.label, rand_prun_tree$tip.label), 
-                    keept = intersect(fern_tre$tip.label, rand_prun_tree$tip.label))
-t2.1 <- rand_tax_imp_tree %>% 
-  ggtree(layout = typ_tre, ladderize = T, size = .2) +
-  geom_nodepoint(size = .15, alpha = .55)  +
-  labs(title = "Random pruning (30%)", subtitle = "Taxonomic imputed (node)") #+ geom_tiplab(aes(subset = label %in% grp2$imputed), color = 'firebrick', size = 1.2) #+ scale_x_reverse()
-
-ran_prn_nd_imp <- groupOTU(t2.1, rand_prn_ls, 'tips') + aes(color = tips) + 
-  theme(legend.position = "none") + 
-  scale_color_manual(values = c("red", "black")) 
-
-# Randomly pruned and taxonomically imputed (randomly within)
-t3.1 <- rand_tax_imp_rand_tree %>% 
-  ggtree(layout = typ_tre, ladderize = T, size = .2) +
-  geom_nodepoint(size = .15, alpha = .55)  +
-  labs(title = "Random pruning (30%)", subtitle = "Taxonomic imputed (binary)") #+ geom_tiplab(aes(subset = label %in% grp4$imputed), color = 'firebrick', size = 1.2)
-
-ran_prn_bin <- groupOTU(t3.1, rand_prn_ls, 'tips') + aes(color = tips) +
-  theme(legend.position = "none") +
-  scale_color_manual(values = c("red", "black"))
-
-# Lateraly pruned 
-late_prn_ls <- list(pruned = setdiff(fern_tre$tip.label, late_prun_tree$tip.label), 
-                    keept = intersect(fern_tre$tip.label, late_prun_tree$tip.label))
-
-t1.2 <- fern_tre %>% 
-  ggtree(layout = typ_tre, ladderize = T, size = .2) +
-  geom_nodepoint(size = .15, alpha = .55)  +
-  labs(title = "Lateral pruning (30%)") #+ geom_tiplab(aes(subset = label %in% grp1$pruned), color = 'firebrick', size = 1.2)
-
-late_prn <- groupOTU(t1.2, late_prn_ls, 'tips') + aes(color = tips) +
-  theme(legend.position = "none") +
-  scale_color_manual(values = c("black", "red"))
-
-# Lateraly pruned and taxonomically imputed (at node)
-late_prn_ls <- list(imputed = setdiff(fern_tre$tip.label, late_prun_tree$tip.label), 
-                    keept = intersect(fern_tre$tip.label, late_prun_tree$tip.label))
-
-t2.2 <- late_tax_imp_tree %>% 
-  ggtree(layout = typ_tre, ladderize = T, size = .2) +
-  geom_nodepoint(size = .15, alpha = .55)  +
-  labs(title = "Lateral pruning (30%)", subtitle = "Taxonomic imputed (node)")
-
-late_prn_nd_imp <- groupOTU(t2.2, late_prn_ls, 'tips') + aes(color = tips) + 
-  theme(legend.position = "none") +
-  scale_color_manual(values = c("red", "black"))
-
-# Lateraly pruned and taxonomically imputed (randomly within)
-t3.2 <- late_tax_imp_rand_tree %>% 
-  ggtree(layout = typ_tre, ladderize = T, size = .2) +
-  geom_nodepoint(size = .15, alpha = .55)  +
-  labs(title = "Lateral pruning (30%)", subtitle = "Taxonomic imputed (binary)") #+ geom_tiplab(aes(subset = label %in% grp4$imputed), color = 'firebrick', size = 1.2)
-
-late_prn_bin <- groupOTU(t3.2, late_prn_ls, 'tips') + aes(color = tips) +
-  theme(legend.position = "none") +
-  scale_color_manual(values = c("red", "black"))
-
-if(typ_tre == "fan"){
-  pl_lay <- "
-  AABB
-  AABB
-  CCDD
-  CCDD
-  "
-} else {
-  pl_lay <- "
-  AA#BBCCDD
-  AA#BBCCDD
-  AA#BBCCDD
-  "
-}
-
-# random pruning
-free(fern_full) + free(ran_prn) + free(ran_prn_nd_imp) + free(ran_prn_bin) + 
-  plot_layout(guides = "collect", design = pl_lay, axis_titles = "collect", tag_level = "keep")
-ggsave(filename = paste0("figures/comp_trees_rand_prn.pdf"), 
-       width = 30, height = 15, units = "cm", dpi = 200)
-# lateral pruning 
-free(fern_full) + free(late_prn) + free(late_prn_nd_imp) + free(late_prn_bin) +
-  plot_layout(guides = "collect", design = pl_lay, axis_titles = "collect", tag_level = "keep")
-ggsave(filename = paste0("figures/comp_trees_late_prn.pdf"), 
-       width = 30, height = 15, units = "cm", dpi = 200)
+revts(ggtree(fern_tre, layout = "rectangular", ladderize = T, size = .2))  + 
+  coord_geo(xlim = c(-440, 0), ylim = c(-2, Ntip(fern_tre)), 
+            pos = "bottom", size = 5, fontface = "bold", #alpha = 0.95,
+            #dat = list("stages", "epochs", "periods"),
+          neg = T, abbrv = T) + 
+  scale_x_continuous(breaks = seq(-440, 0, 50), labels = abs(seq(-440, 0, 50))) +
+  theme_tree2() +
+  theme(axis.text.x = element_text(size = 12, face = "bold")) 
+ggsave(filename = paste0("figures/fern_tree_time.pdf"), 
+       width = 15, height = 27, units = "cm", dpi = 200)
 
 # check tips were imputed ok ####
 k = 6
