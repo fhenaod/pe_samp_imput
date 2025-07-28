@@ -398,14 +398,15 @@ for(i in 1:length(forms2print)){
     theme_classic(base_size = 12) + 
     ylim(c(0.35, .9)) +
     scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
-    theme(strip.background = element_blank(), legend.position = "right") #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "fixed")
+    theme(strip.background = element_blank(), legend.position = "right") + 
+    facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "fixed")
   ggsave(filename = paste0("figures/y_meas_canaper", fig_out), 
-         width = 20, height = 20, units = "cm", dpi = 200)
-  
+         width = 25, height = 15, units = "cm", dpi = 200)
+
   # with sd
   canaper_mean_stats %>% 
     mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
-           cat2map = paste0(treat, "-" , imputation)) %>%
+           cat2map = paste0(treat, "-" , imputation)) %>% 
     ggplot(aes(x = samp_frac, y = mean_fmes, ymin = mean_fmes - sd_fmes, ymax = mean_fmes + sd_fmes,
                color = imputation, shape = treat)) +
     geom_pointrange(position = position_dodge2(width = .025, padding = 0.1)) + 
@@ -413,16 +414,16 @@ for(i in 1:length(forms2print)){
     geom_line(aes(linetype = imputation)) + 
     #scale_linetype_manual(values = c("solid", "twodash", "dotted")) +
     labs(#title = "Endemism categorization", 
-         x = "", y = "Mean F-score", 
+         x = "Proportion of tips removed", y = "Mean F-score", 
          color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
     theme_classic(base_size = 12) + 
     ylim(c(0.35, .9)) +
     scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
     guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
            shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
-    theme(strip.background = element_blank(), legend.position = "right") #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "fixed")
+    theme(strip.background = element_blank(), legend.position = "right") #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y")
   ggsave(filename = paste0("figures/y_meas_sd_canaper", fig_out), 
-         width = 20, height = 20, units = "cm", dpi = 200)
+         width = 30, height = 15, units = "cm", dpi = 300)
   
   # precision
   canaper_mean_stats %>% 
@@ -439,9 +440,10 @@ for(i in 1:length(forms2print)){
          color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
     theme_classic(base_size = 12) + 
     scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
-    theme(strip.background = element_blank(), legend.position = "right") #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
+    theme(strip.background = element_blank(), legend.position = "right") + 
+    facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
   ggsave(filename = paste0("figures/prec_sd_canaper", fig_out), 
-         width = 20, height = 20, units = "cm", dpi = 200)
+         width = 25, height = 15, units = "cm", dpi = 200)
   
   # recall
   canaper_mean_stats %>% 
@@ -458,8 +460,91 @@ for(i in 1:length(forms2print)){
          color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
     theme_classic(base_size = 12) + 
     scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
-    theme(strip.background = element_blank(), legend.position = "right") #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
+    theme(strip.background = element_blank(), legend.position = "right") + 
+    facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
   ggsave(filename = paste0("figures/reca_sd_canaper", fig_out), 
-         width = 20, height = 20, units = "cm", dpi = 200)
+         width = 25, height = 15, units = "cm", dpi = 200)
 }
+
+
+canaper_mean_stats %>% 
+  mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
+         cat2map = paste0(treat, "-" , imputation)) %>% 
+  filter(imputation != "random") %>% 
+  ggplot(aes(x = samp_frac, y = mean_fmes, ymin = mean_fmes - sd_fmes, ymax = mean_fmes + sd_fmes,
+             color = imputation, shape = treat)) +
+  geom_pointrange(position = position_dodge2(width = .01, padding = 0.1)) + 
+  scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
+  geom_line(aes(linetype = imputation)) + 
+  #scale_linetype_manual(values = c("solid", "twodash", "dotted")) +
+  labs(#title = "Endemism categorization", 
+    x = "Proportion of tips removed", y = "Mean F-score", 
+    color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
+  theme_classic(base_size = 12) + 
+  ylim(c(0.35, .9)) +
+  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3), shape = c(NA, NA, NA))), 
+         shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
+  theme(strip.background = element_blank(), legend.position = "right") + 
+  facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y")
+ggsave(filename = paste0("figures/y_meas_sd_canaper_2pnl", ".pdf"), 
+       width = 30, height = 15, units = "cm", dpi = 300)
+
+## animated #####
+library(gganimate)
+
+# with sd
+f_meas_pt <- canaper_mean_stats %>% 
+  mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
+         cat2map = paste0(treat, "-" , imputation)) %>% 
+  filter(imputation != "random") %>% 
+  ggplot(aes(x = samp_frac, y = mean_fmes, ymin = mean_fmes - sd_fmes, ymax = mean_fmes + sd_fmes,
+             color = imputation, shape = treat)) +
+  geom_pointrange(position = position_dodge2(width = .01, padding = 0.1)) + 
+  scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
+  geom_line(aes(linetype = imputation)) + 
+  #scale_linetype_manual(values = c("solid", "twodash", "dotted")) +
+  labs(#title = "Endemism categorization", 
+    x = "Proportion of tips removed", y = "Mean F-score", 
+    color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
+  theme_classic(base_size = 12) + 
+  ylim(c(0.35, .9)) +
+  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
+  guides(shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8))), 
+         colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3), shape = c(NA, NA, NA)))) +
+  theme(strip.background = element_blank(), legend.position = "right") + 
+  facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y") +
+  transition_reveal(samp_frac, keep_last = T)
+animate(f_meas_pt, width = 30, height = 15, units = "cm", 
+        res = 200, nframes = 60,  fps = 10, duration = 10, 
+        start_pause = 2, end_pause = 60)
+anim_save(filename = "figures/f_meas_anim.gif")
+
+
+f_meas_pt2 <- canaper_mean_stats %>% 
+  mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
+         cat2map = paste0(treat, "-" , imputation)) %>% head()
+  filter(imputation != "random") %>% 
+  ggplot(aes(x = samp_frac, y = mean_fmes, ymin = mean_fmes - sd_fmes, ymax = mean_fmes + sd_fmes,
+             color = imputation, shape = treat)) +
+  geom_pointrange(position = position_dodge2(width = .01, padding = 0.1)) + 
+  scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
+  geom_line(aes(linetype = imputation)) + 
+  #scale_linetype_manual(values = c("solid", "twodash", "dotted")) +
+  labs(#title = "Endemism categorization", 
+    x = "Proportion of tips removed", y = "Mean F-score", 
+    color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
+  theme_classic(base_size = 12) + 
+  ylim(c(0.35, .9)) +
+  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
+  guides(shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8))), 
+         colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3), shape = c(NA, NA, NA)))) +
+  theme(strip.background = element_blank(), legend.position = "right") + 
+  facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y") +
+  transition_states(cat2map, transition_length = 2, state_length = 1, wrap = F) +
+  ease_aes('sine-in-out')
+animate(f_meas_pt2, width = 30, height = 15, units = "cm", 
+        res = 200, nframes = 60,  fps = 10, duration = 10, 
+        start_pause = 2, end_pause = 60)
+anim_save(filename = "figures/f_meas_anim2.gif")
 
