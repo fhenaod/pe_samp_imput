@@ -32,7 +32,7 @@ prn_trs %>% saveRDS(paste0("output/pruned_trees/rand_pruned_trs_", samp_prop[j],
 
 # sim character ####
 n_reps <- 100
-run_char <- T
+run_char <- F
 if(run_char){
   sim_char <- sim.char(targ_tre, par = .2, nsim = n_reps, model = "BM")
   sim_char %>% saveRDS("output/sim_char_bm.rds")
@@ -119,7 +119,7 @@ data.frame(sim_char) %>%
   select(sample(1:100, 5)) %>% 
   #rownames_to_column(var = "tip_names") %>%
   gheatmap(ggtree(targ_tre), ., offset = 8, width = .15, 
-         colnames = F, legend_title = "trait\nvalue", ) +
+         colnames = F, legend_title = "trait\nvalue") +
   scale_x_ggtree() + 
   scale_y_continuous(expand = c(0, 0.2)) + 
   theme(legend.position = "none")
@@ -134,85 +134,3 @@ data.frame(sim_char) %>%
   theme(legend.position = "none")
 ggsave("figures/tree_simchar.png", width = 25, height = 25, units = "cm", dpi = 200)
 
-# viz pruning data in hist ####
-library(ggpubr)
-# lateral
-v2samp <- sample(2:100, 3, replace = F)
-
-data2plt <- data.frame(sim_char) %>% rownames_to_column(var = "tip_names") %>% 
-  select(1, all_of(v2samp)) %>% 
-  gather(key = sim_n, val, -tip_names) %>% 
-  group_by(sim_n) %>% 
-  mutate(perc = lat_funct(val)) 
-
-lat2print <- list()
-for(i in 1:c(length(lat_cat2filt)-1)){
-  lat2print[[i]] <- data2plt %>% 
-    mutate(is_pr = ifelse(perc %in% lat_cat2filt[1:i], "pruned", "preserved")) %>%
-    ggplot(aes(x = val, color = is_pr, fill = is_pr)) +
-    geom_histogram() +
-    theme_classic() + 
-    theme(strip.background = element_blank(),
-          strip.text.x = element_blank()) +
-    labs(subtitle = paste0("Lateral pruning (", lat_samp_prop[i]*100, "%)"),
-         x = "Trait value", y = "Count") +
-    scale_color_grey(name = "State", start = .55, end = .15) + 
-    scale_fill_grey( name = "State", start = .75, end = .15) +
-    geom_vline(data = data2plt %>% plyr::ddply("sim_n", summarise, grp.mean = mean(val)), 
-               aes(xintercept = grp.mean), color = "coral",
-               linetype = "dashed")+
-    facet_wrap(~sim_n, scales = "free")
-  
-}
-ggarrange(plotlist = lat2print, ncol = 1, common.legend = T)
-ggsave("figures/lateral_prun.png", 
-       width = 20, height = 25, units = "cm", dpi = 200, bg = "white")
- 
-# marginal
-data2plt <- data.frame(sim_char) %>% 
-  rownames_to_column(var = "tip_names") %>% 
-  select(1, all_of(v2samp)) %>% 
-  gather(key = sim_n, val, -tip_names) %>% 
-  group_by(sim_n) %>% 
-  mutate(perc = margin_funct(val)) 
-
-marg2print <- list()
-for(i in 1:length(marg_cat2filt_ls)){
-marg2print[[i]] <- data2plt %>% 
-    mutate(is_pr = ifelse(perc %in% marg_cat2filt_ls[[i]], "pruned", "preserved")) %>%
-    ggplot(aes(x = val, color = is_pr, fill = is_pr)) +
-    geom_histogram() +
-    theme_classic() + 
-    theme(strip.background = element_blank(),
-          strip.text.x = element_blank()) +
-    labs(subtitle = paste0("Marginal pruning (", c(length(marg_cat2filt_ls[[i]])*.025)*100, "%)"),
-         x = "Trait value", y = "Count") +
-    scale_color_grey(name = "State", start = .55, end = .15) + 
-    scale_fill_grey( name = "State", start = .75, end = .15) +
-    geom_vline(data = data2plt %>% plyr::ddply("sim_n", summarise, grp.mean = mean(val)), 
-               aes(xintercept = grp.mean), color = "coral",
-               linetype = "dashed") +
-    facet_wrap(~sim_n, scales = "free", ncol = 3)
-}
-ggarrange(plotlist = marg2print, ncol = 1, common.legend = T)
-ggsave("figures/marginal_prun.png", 
-       width = 20, height = 25, units = "cm", dpi = 200, bg = "white")
-
-### with densities
-data2plt %>% 
-  ggplot(aes(x = val, color = perc, fill = perc)) +
-  #geom_histogram(fill  = "red",
-  #               alpha = .5,
-  #               position = "identity") +
-  geom_histogram(aes(y = ..density..), col = "darkgray", position = "identity",  alpha = .5) +
-  geom_density(alpha = .85) + 
-  theme_classic() + 
-  theme(strip.background = element_blank(),
-        strip.text.x = element_blank()) +
-  labs(title = "Lateral pruning", subtitle = "",
-       x = "Trait value", y = "Density") +
-  scale_color_grey(name = "Percentile") + scale_fill_grey(name = "Percentile") +
-  geom_vline(data = data2plt %>% plyr::ddply("sim_n", summarise, grp.mean = mean(val)), 
-             aes(xintercept = grp.mean), color = "coral",
-             linetype = "dashed") +
-  facet_wrap(~sim_n, scales = "free")
