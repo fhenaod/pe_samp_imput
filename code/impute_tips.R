@@ -307,27 +307,6 @@ sapply(targ_tr_ls, is.ultrametric)# %>% table()
 print(paste0("END ", where2impt, " imputation"))
 }
 
-## viz tree with geological timeline ####
-library(deeptime)
-fern_tre %>% 
-  ggtree(layout = "fan", ladderize = T, size = .2) + 
-  gggeo_scale(
-    time_scale = "periods", # Or use "eras", "epochs", etc.
-    pos = "bottom", # Position of the timescale
-    offset = 0.5  # Space between tree and timescale
-  )
-
-revts(ggtree(fern_tre, layout = "rectangular", ladderize = T, size = .2))  + 
-  coord_geo(xlim = c(-440, 0), ylim = c(-2, Ntip(fern_tre)), 
-            pos = "bottom", size = 5, fontface = "bold", #alpha = 0.95,
-            #dat = list("stages", "epochs", "periods"),
-          neg = T, abbrv = T) + 
-  scale_x_continuous(breaks = seq(-440, 0, 50), labels = abs(seq(-440, 0, 50))) +
-  theme_tree2() +
-  theme(axis.text.x = element_text(size = 12, face = "bold")) 
-ggsave(filename = paste0("figures/fern_tree_time.pdf"), 
-       width = 15, height = 27, units = "cm", dpi = 200)
-
 # check tips were imputed ok ####
 k = 6
 tips2add_ls[[k]] %>% sort()
