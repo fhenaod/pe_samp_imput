@@ -28,6 +28,14 @@ spp_dist_df %>%
   ggplot(aes(x = (value))) + geom_histogram() +
   facet_wrap(~ key, scales = "free")
 
+spp_dist_df %>% 
+ggplot(aes(x = (n_grid))) + 
+  geom_histogram(color = "white", fill = "gray10") +
+  theme_classic(base_size = 15) +
+  labs(title = "Ferns of Japan", 
+       x = "Geographic range size", y = "Number of Species")
+ggsave("figures/hist_fern_rang.png", width = 15, height = 15, units = "cm")
+
 dir.create("output/pruned_trees/")
 # lateral pruning ####
 # classifies continuous values into five percentiles, and samples/prunes the first four in increments
@@ -509,3 +517,8 @@ for(f in 1:length(pttr)){
   } else {}
   cat(paste0("END: ", pttr[f]))
 }
+
+
+
+
+
