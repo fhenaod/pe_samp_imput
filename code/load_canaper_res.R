@@ -4,7 +4,7 @@ cols2sel <- c("site",
               "pd_obs", "pe_obs", "rpd_obs", "rpe_obs", 
               "pd_rand_mean","pe_rand_mean", "rpd_rand_mean", "rpe_rand_mean")
 
-run_load = F
+run_load = T
 if(run_load){
 # load pruned ####
 rnd_canaper_fls <- list.files("output/canaper", "canaper_rand_pr_[0-9]", all.files = T, full.names = T)
@@ -133,10 +133,10 @@ marg_canape_all_df <- data.table::rbindlist(marg_canape_df_ls) ; dim(marg_canape
 
 # spatial pruning ###
 late_spat_canaper_fls <- list.files("output/canaper", "canaper_late_spat_pr_rand", all.files = T, full.names = T)
-late_frc <- readr::parse_number(late_canaper_fls)
+late_frc <- readr::parse_number(late_spat_canaper_fls)
 
 marg_spat_canaper_fls <- list.files("output/canaper", "canaper_marg_spat_pr_rand", all.files = T, full.names = T)
-marg_frc <- readr::parse_number(marg_canaper_fls)
+marg_frc <- readr::parse_number(marg_spat_canaper_fls)
 
 # lateral - spatial
 late_canape_df_ls <- list()
@@ -211,10 +211,10 @@ marg_canape_all_df <- data.table::rbindlist(marg_canape_df_ls) ; dim(marg_canape
 
 # spatial pruning ##
 late_spat_canaper_fls <- list.files("output/canaper", "canaper_late_spat_pr_tax_imp_root", all.files = T, full.names = T)
-late_frc <- readr::parse_number(late_canaper_fls)
+late_frc <- readr::parse_number(late_spat_canaper_fls)
 
 marg_spat_canaper_fls <- list.files("output/canaper", "canaper_marg_spat_pr_tax_imp_root", all.files = T, full.names = T)
-marg_frc <- readr::parse_number(marg_canaper_fls)
+marg_frc <- readr::parse_number(marg_spat_canaper_fls)
 
 # lateral - spatial
 late_canape_df_ls <- list()
@@ -289,10 +289,10 @@ marg_canape_all_df <- data.table::rbindlist(marg_canape_df_ls) ; dim(marg_canape
 
 # spatial pruning ##
 late_spat_canaper_fls <- list.files("output/canaper", "canaper_late_spat_pr_tax_imp_random", all.files = T, full.names = T)
-late_frc <- readr::parse_number(late_canaper_fls)
+late_frc <- readr::parse_number(late_spat_canaper_fls)
 
 marg_spat_canaper_fls <- list.files("output/canaper", "canaper_marg_spat_pr_tax_imp_random", all.files = T, full.names = T)
-marg_frc <- readr::parse_number(marg_canaper_fls)
+marg_frc <- readr::parse_number(marg_spat_canaper_fls)
 
 # lateral - spatial 
 late_canape_df_ls <- list()
