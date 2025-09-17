@@ -91,7 +91,8 @@ rsq_means <- stats_sim_df %>%
   select(sim_n, samp_frac, treat,imputation, contains("rsq")) %>% 
   ungroup() %>% group_by(samp_frac, treat, imputation) %>%
   summarise(across(rsq_pd:rsq_rpe_rand, ~mean(.x, na.rm = T), .names = "mean_{.col}"),
-            across(rsq_pd:rsq_rpe_rand, ~sd(.x, na.rm = T), .names = "sd_{.col}"))
+            across(rsq_pd:rsq_rpe_rand, ~sd(.x, na.rm = T), .names = "sd_{.col}"),
+            across(rsq_pd:rsq_rpe_rand, ~sum(!is.na(.x)), .names = "n_{.col}"))
 
 # mean values across sims #### 
 # get mean across 100 sims per samp fraction, pruning and imputation methods
@@ -149,7 +150,7 @@ mape_pd_sd_pt <- mape_means %>%
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
   theme(strip.background = element_blank(), legend.position = "right") +
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2, 3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
@@ -166,8 +167,8 @@ mape_pe_sd_pt <- mape_means %>%
        x = "", y = "Mean Absolute Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
-  theme(strip.background = element_blank(), legend.position = "right") +
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+  theme(strip.background = element_blank(), legend.position = "none") +
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2, 3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
@@ -184,8 +185,8 @@ mape_rpd_sd_pt <- mape_means %>%
        x = "", y = "Mean Absolute Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
-  theme(strip.background = element_blank(), legend.position = "right") +
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+  theme(strip.background = element_blank(), legend.position = "none") +
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2, 3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
@@ -202,8 +203,8 @@ mape_rpe_sd_pt <- mape_means %>%
        x = "Proportion of tips removed", y = "Mean Absolute Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
-  theme(strip.background = element_blank(), legend.position = "right") +
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+  theme(strip.background = element_blank(), legend.position = "none") +
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2, 3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
@@ -220,8 +221,8 @@ mape_pd_rand_sd_pt <- mape_means %>%
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
-  theme(strip.background = element_blank(), legend.position = "right") +
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+  theme(strip.background = element_blank(), legend.position = "none") +
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2, 3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
@@ -238,8 +239,8 @@ mape_pe_rand_sd_pt <- mape_means %>%
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
-  theme(strip.background = element_blank(), legend.position = "right") +
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+  theme(strip.background = element_blank(), legend.position = "none") +
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2, 3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
@@ -256,8 +257,8 @@ mape_rpd_rand_sd_pt <- mape_means %>%
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
-  theme(strip.background = element_blank(), legend.position = "right") +
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+  theme(strip.background = element_blank(), legend.position = "none") +
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2, 3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
@@ -274,8 +275,8 @@ mape_rpe_rand_sd_pt <- mape_means %>%
        x = "Proportion of tips removed", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
-  theme(strip.background = element_blank(), legend.position = "right") +
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+  theme(strip.background = element_blank(), legend.position = "none") +
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2, 3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
@@ -292,8 +293,8 @@ mape_pd_rand_sd_pt <- mape_means %>%
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
-  theme(strip.background = element_blank(), legend.position = "right") +
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+  theme(strip.background = element_blank(), legend.position = "none") +
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2, 3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
@@ -310,8 +311,8 @@ mape_pe_rand_sd_pt <- mape_means %>%
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
-  theme(strip.background = element_blank(), legend.position = "right") +
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+  theme(strip.background = element_blank(), legend.position = "none") +
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2, 3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
@@ -328,8 +329,8 @@ mape_rpd_rand_sd_pt <- mape_means %>%
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
-  theme(strip.background = element_blank(), legend.position = "right") +
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+  theme(strip.background = element_blank(), legend.position = "none") +
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2, 3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
@@ -346,8 +347,8 @@ mape_rpe_rand_sd_pt <- mape_means %>%
        x = "Proportion of tips removed", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
-  theme(strip.background = element_blank(), legend.position = "right") +
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+  theme(strip.background = element_blank(), legend.position = "none") +
+  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2, 3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
@@ -359,11 +360,18 @@ pl_long <- "
   CCGG
   CCGG
   DDHH
-  DDHH
-  "
-free(mape_pd_sd_pt) + free(mape_pe_sd_pt) + free(mape_rpd_sd_pt) + free(mape_rpe_sd_pt) +
-  free(mape_pd_rand_sd_pt) + free(mape_pe_rand_sd_pt) + free(mape_rpd_rand_sd_pt) + free(mape_rpe_rand_sd_pt) +
-  plot_layout(guides = "collect", design = pl_long, axis_titles = "collect", tag_level = "new")
+  DDHH"
+
+(mape_pd_sd_pt) + 
+(mape_pe_sd_pt) + 
+(mape_rpd_sd_pt) + 
+(mape_rpe_sd_pt) +
+(mape_pd_rand_sd_pt) + 
+(mape_pe_rand_sd_pt) + 
+(mape_rpd_rand_sd_pt) + 
+(mape_rpe_rand_sd_pt) +
+plot_layout(guides = "collect", 
+  design = pl_long, axis_titles = "collect", tag_level = "new")
 
 for(i in 1:length(forms2print)){
   fig_out <- forms2print[i]
@@ -515,25 +523,24 @@ rsq_rpe_rand_sd_pt <- rsq_means %>%
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
 
-pl_long <- "
-  AAEE
+pl_long <- 
+ "AAEE
   AAEE
   BBFF
   BBFF
   CCGG
   CCGG
   DDHH
-  DDHH
-  "
+  DDHH"
 
-free(rsq_pd_sd_pt)  + #theme(legend.position = "none") +
-free(rsq_pe_sd_pt)  + #theme(legend.position = "none") +
-free(rsq_rpd_sd_pt) + #theme(legend.position = "none") +
-free(rsq_rpe_sd_pt) + #theme(legend.position = "none") +
-free(rsq_pd_rand_sd_pt)  + #theme(legend.position = "none") +
-free(rsq_pe_rand_sd_pt)  + #theme(legend.position = "none") +
-free(rsq_rpd_rand_sd_pt) + #theme(legend.position = "none") +
-free(rsq_rpe_rand_sd_pt) + #theme(legend.position = "none") +
+(rsq_pd_sd_pt)  + #theme(legend.position = "none") +
+(rsq_pe_sd_pt)  + #theme(legend.position = "none") +
+(rsq_rpd_sd_pt) + #theme(legend.position = "none") +
+(rsq_rpe_sd_pt) + #theme(legend.position = "none") +
+(rsq_pd_rand_sd_pt)  + #theme(legend.position = "none") +
+(rsq_pe_rand_sd_pt)  + #theme(legend.position = "none") +
+(rsq_rpd_rand_sd_pt) + #theme(legend.position = "none") +
+(rsq_rpe_rand_sd_pt) + #theme(legend.position = "none") +
   plot_layout(guides = "collect", design = pl_long, axis_titles = "collect", tag_level = "new")
 
 for(i in 1:length(forms2print)){
@@ -876,22 +883,48 @@ ggsave(filename = paste0("figures/rsq_mean-all_pnl", fig_out),
        width = 30, height = 40, units = "cm", dpi = 200)
 }
 
-# get numbers and descriptives ####
 mape_means %>% 
   dplyr::select(samp_frac, treat, imputation, starts_with("mean"))%>% # mean sd
-  gather(key, value, -samp_frac, -treat, -imputation) %>%
-  filter(imputation != "none" #, samp_frac == 0.3
-         ) %>% #view()
+  gather(key, value, -samp_frac, -treat, -imputation) %>% 
+  filter(treat != "rand-pr" #, imputation == "none" #, samp_frac == 0.3
+  ) %>% 
+  ggplot(aes(x = as.factor(samp_frac), y = value, col = imputation)) +
+  geom_boxplot(outlier.colour = "red", varwidth = T, na.rm = T) +
+  #geom_point(col = "coral", cex = .5) + 
+  theme_bw() + 
+  geom_hline(yintercept = 20, col = "darkgray") +
+  #geom_hline(yintercept = 10, col = "steelblue", alpha = .5) +
+  facet_wrap(~key, scales = "fixed", ncol = 2)
+
+rsq_means %>% 
+  dplyr::select(samp_frac, treat, imputation, starts_with("mean"))%>% # mean sd
+  gather(key, value, -samp_frac, -treat, -imputation) %>% 
+  filter(treat != "rand-pr" #, imputation == "none" #, samp_frac == 0.3
+  ) %>%
+  ggplot(aes(x = as.factor(samp_frac), y = value, col = imputation)) +
+  geom_boxplot(outlier.colour = "red", varwidth = T, na.rm = T) +
+  #geom_point(col = "coral", cex = .5) + 
+  theme_bw() + geom_hline(yintercept = 0.6, col = "darkgray") +
+  facet_wrap(~key, scales = "fixed", ncol = 2)
+
+# get descriptive numbers ####
+mape_means %>% 
+  dplyr::select(samp_frac, treat, imputation, starts_with("mean"))%>% # mean sd
+  gather(key, value, -samp_frac, -treat, -imputation) %>% 
+  filter(treat != "rand-pr" , imputation != "random" #, samp_frac == 0.3
+         ) %>% #head()
   #ggplot(aes(x = samp_frac, y = value)) + geom_point()
-  group_by(key) %>% 
+  group_by(key, samp_frac, treat, imputation) %>% 
   summarise(min = min(value, na.rm = T), 
-            max = max(value, na.rm = T)) %>% arrange(desc(max))
+            max = max(value, na.rm = T)) %>%
+  filter(samp_frac == 0.5) %>% view
 
 rsq_means %>% 
   dplyr::select(samp_frac, treat, imputation, starts_with("mean"))%>% # mean
   gather(key, value, -samp_frac, -treat, -imputation) %>%
-  filter(imputation == "none") %>% 
-  ggplot(aes(x = samp_frac, y = value)) + geom_point()
-  group_by(key) %>% 
+  filter(treat != "rand-pr" , imputation != "none" #, samp_frac == 0.3
+  ) %>% #head()
+  group_by(key, samp_frac, treat,imputation) %>% 
   summarise(min = min(value, na.rm = T), 
-            max = max(value, na.rm = T)) %>% arrange(desc(max))
+            max = max(value, na.rm = T)) %>% 
+    filter(samp_frac <= 0.3, max < 0.6) %>% view
