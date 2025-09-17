@@ -123,3 +123,22 @@ node2where=function(gen, tree){
   return(nd_where)
 }
 
+# functions to estimate Robinson–Foulds distances, adjusting for phylo-info content
+# by tree 
+get_tree_metrics=function(tree, sum){
+  require(TreeDist, quietly = T)
+  data.frame(splitwise_info = SplitwiseInfo(tree, sum = sum),
+             cluster_entropy = ClusteringEntropy(tree, sum = sum),
+             clustering_info = ClusteringInfo(tree, sum = sum)
+             )
+}
+
+# comparing between trees
+get_t2t_metrics=function(ref_tree, compar_tree, sum, sim, norm){
+  require(TreeDist, quietly = T)
+  data.frame(rob.fou_norm = RobinsonFoulds(ref_tree, compar_tree, similarity = sim, normalize = norm),
+             rob.fou_info = RobinsonFouldsInfo(ref_tree, compar_tree, similarity = sim, normalize = norm),
+             shared.phy_info = SharedPhylogeneticInfo(ref_tree, compar_tree, normalize = norm),
+             phylo_info_dist = PhylogeneticInfoDistance(ref_tree, compar_tree, normalize = norm)
+             )
+}
