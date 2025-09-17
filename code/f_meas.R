@@ -98,7 +98,7 @@ if(get_tabs2res){
 rnd_canaper_fls <- list.files("output/canaper", "canaper_rand_pr_rand", all.files = T, full.names = T)
 rand_frc <- readr::parse_number(rnd_canaper_fls)
 
-get_tabs2res <- F
+get_tabs2res <- T
 if(get_tabs2res){
   # random 
   rnd_canape_df_ls <- list()
@@ -119,7 +119,7 @@ if(get_tabs2res){
   marg_canaper_fls <- list.files("output/canaper", "canaper_marg_pr_rand", all.files = T, full.names = T)
   marg_frc <- readr::parse_number(marg_canaper_fls)
   
-  # lateral - quatitative traitr
+  # lateral - quantitative trait
   late_canape_df_ls <- list()
   for(i in 1:length(late_canaper_fls)){
     late_canape_ls <- readRDS(late_canaper_fls[i])
@@ -131,7 +131,7 @@ if(get_tabs2res){
   }
   late_pr_rnd_imp_canape_all_df <- data.table::rbindlist(late_canape_df_ls) ; dim(late_pr_rnd_imp_canape_all_df) %>% print()
   
-  # marginal - quatitative traitr
+  # marginal - quantitative trait
   marg_canape_df_ls <- list()
   for(i in 1:length(marg_canaper_fls)){
     marg_canape_ls <- readRDS(marg_canaper_fls[i])
@@ -145,10 +145,10 @@ if(get_tabs2res){
   
   # spatial pruning ###
   late_spat_canaper_fls <- list.files("output/canaper", "canaper_late_spat_pr_rand", all.files = T, full.names = T)
-  late_frc <- readr::parse_number(late_canaper_fls)
+  late_frc <- readr::parse_number(late_spat_canaper_fls)
   
   marg_spat_canaper_fls <- list.files("output/canaper", "canaper_marg_spat_pr_rand", all.files = T, full.names = T)
-  marg_frc <- readr::parse_number(marg_canaper_fls)
+  marg_frc <- readr::parse_number(marg_spat_canaper_fls)
   
   # lateral - spatial
   late_canape_df_ls <- list()
@@ -174,6 +174,7 @@ if(get_tabs2res){
                         late_pr_rnd_imp_canape_all_df, marg_pr_rand_imp_canape_all_df,
                         late_spat_pr_rand_imp_canape_all_df, marg_spat_pr_rand_imp_canape_all_df)
   rand_imp_all %>% saveRDS("output/prun_rand_imp_res_canaper.rds")
+  rand_imp_all %>% group_by(treat) %>% tally()
 } else {
   rand_imp_all <- readRDS("output/prun_rand_imp_res_canaper.rds"); head(rand_imp_all)
 }
@@ -183,7 +184,7 @@ if(get_tabs2res){
 rnd_canaper_fls <- list.files("output/canaper", "canaper_rand_pr_tax_imp_root", all.files = T, full.names = T)
 rand_frc <- readr::parse_number(rnd_canaper_fls)
 
-get_tabs2res <- F
+get_tabs2res <- T
 if(get_tabs2res){
   # random 
   rnd_canape_df_ls <- list()
@@ -230,10 +231,10 @@ if(get_tabs2res){
   
   # spatial pruning
   late_spat_canaper_fls <- list.files("output/canaper", "canaper_late_spat_pr_tax_imp_root", all.files = T, full.names = T)
-  late_frc <- readr::parse_number(late_canaper_fls)
+  late_frc <- readr::parse_number(late_spat_canaper_fls)
   
   marg_spat_canaper_fls <- list.files("output/canaper", "canaper_marg_spat_pr_tax_imp_root", all.files = T, full.names = T)
-  marg_frc <- readr::parse_number(marg_canaper_fls)
+  marg_frc <- readr::parse_number(marg_spat_canaper_fls)
   
   # lateral - spatial
   late_canape_df_ls <- list()
@@ -260,6 +261,7 @@ if(get_tabs2res){
                                  late_pr_tax_imp_canape_all_df, marg_pr_tax_imp_canape_all_df,
                                  late_spat_pr_tax_imp_canape_all_df, marg_spat_pr_tax_imp_canape_all_df)
   prun_tax_imp_node_all %>% saveRDS("output/prun_tax_imp-node_res_canaper.rds")
+  prun_tax_imp_node_all %>% group_by(treat) %>% tally()
 } else {
   prun_tax_imp_node_all <- readRDS("output/prun_tax_imp-node_res_canaper.rds") ; head(prun_tax_imp_node_all)
 }
@@ -269,7 +271,7 @@ if(get_tabs2res){
 rnd_canaper_fls <- list.files("output/canaper", "canaper_rand_pr_tax_imp_random", all.files = T, full.names = T)
 rand_frc <- readr::parse_number(rnd_canaper_fls)
 
-get_tabs2res <- F
+get_tabs2res <- T
 if(get_tabs2res){
   # random 
   rnd_canape_df_ls <- list()
@@ -316,10 +318,10 @@ if(get_tabs2res){
   
   # spatial pruning ##
   late_spat_canaper_fls <- list.files("output/canaper", "canaper_late_spat_pr_tax_imp_random", all.files = T, full.names = T)
-  late_frc <- readr::parse_number(late_canaper_fls)
+  late_frc <- readr::parse_number(late_spat_canaper_fls)
   
   marg_spat_canaper_fls <- list.files("output/canaper", "canaper_marg_spat_pr_tax_imp_random", all.files = T, full.names = T)
-  marg_frc <- readr::parse_number(marg_canaper_fls)
+  marg_frc <- readr::parse_number(marg_spat_canaper_fls)
   
   # lateral - spatial
   late_canape_df_ls <- list()
@@ -346,6 +348,7 @@ if(get_tabs2res){
                                  late_pr_tax_imp_rand_canape_all_df, marg_pr_tax_imp_rand_canape_all_df,
                                  late_spat_pr_tax_imp_rand_canape_all_df, marg_spat_pr_tax_imp_rand_canape_all_df)
   prun_tax_imp_rand_all %>% saveRDS("output/prun_tax_imp-rand_res_canaper.rds")
+  prun_tax_imp_rand_all %>% group_by(treat) %>% tally()
 } else {
   prun_tax_imp_rand_all <- readRDS("output/prun_tax_imp-rand_res_canaper.rds") #; head(prun_tax_imp_rand_all)
 }
@@ -381,13 +384,15 @@ canaper_mean_stats <- canaper_stat %>%
 
 # figs #####
 forms2print <- c(".png", ".pdf", ".svg") 
+dpi2plot <- 200
 
 for(i in 1:length(forms2print)){
   fig_out <- forms2print[i]
+  
   # F measure
   canaper_mean_stats %>% 
     mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
-           cat2map = paste0(treat, "-" , imputation)) %>% 
+           cat2map = paste0(treat, "-" , imputation)) %>%
     ggplot(aes(x = samp_frac, y = mean_fmes, color = imputation, shape = treat)) +
     geom_point() + 
     scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
@@ -401,15 +406,16 @@ for(i in 1:length(forms2print)){
     theme(strip.background = element_blank(), legend.position = "right") + 
     facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "fixed")
   ggsave(filename = paste0("figures/y_meas_canaper", fig_out), 
-         width = 25, height = 15, units = "cm", dpi = 200)
+         width = 25, height = 15, units = "cm", dpi = dpi2plot)
 
-  # with sd
+  # with sd 
   canaper_mean_stats %>% 
     mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
            cat2map = paste0(treat, "-" , imputation)) %>% 
+    #mutate(across(starts_with("sd"), ~replace_na(.x, 0))) %>%
     ggplot(aes(x = samp_frac, y = mean_fmes, ymin = mean_fmes - sd_fmes, ymax = mean_fmes + sd_fmes,
                color = imputation, shape = treat)) +
-    geom_pointrange(position = position_dodge2(width = .025, padding = 0.1)) + 
+    geom_pointrange(position = position_dodge2(width = .02, padding = 0.1)) + 
     scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
     geom_line(aes(linetype = imputation)) + 
     #scale_linetype_manual(values = c("solid", "twodash", "dotted")) +
@@ -419,11 +425,36 @@ for(i in 1:length(forms2print)){
     theme_classic(base_size = 12) + 
     ylim(c(0.35, .9)) +
     scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
-    guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
+    guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 , 3, 4), shape = c(NA, NA, NA, NA))), 
            shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
-    theme(strip.background = element_blank(), legend.position = "right") #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y")
+    theme(strip.background = element_blank(), legend.position = "right") + 
+    facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y")
   ggsave(filename = paste0("figures/y_meas_sd_canaper", fig_out), 
-         width = 30, height = 15, units = "cm", dpi = 300)
+         width = 30, height = 15, units = "cm", dpi = dpi2plot)
+  
+  # combined in one fig
+  canaper_mean_stats %>% 
+    mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
+           cat2map = paste0(treat, "-" , imputation)) %>% 
+    filter(treat != "rand-pr") %>% 
+    #filter(imputation != "random") %>% 
+    ggplot(aes(x = samp_frac, y = mean_fmes, ymin = mean_fmes - sd_fmes, ymax = mean_fmes + sd_fmes,
+               color = imputation, shape = treat)) +
+    geom_pointrange(position = position_dodge2(width = .01, padding = 0.1)) + 
+    #scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
+    geom_line(aes(linetype = imputation)) + 
+    #scale_linetype_manual(values = c("solid", "twodash", "dotted")) +
+    labs(#title = "Endemism categorization", 
+      x = "Proportion of tips removed", y = "Mean F-score", 
+      color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
+    theme_classic(base_size = 12) + 
+    ylim(c(0.35, .9)) +
+    scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
+    #guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 , 3, 4), shape = c(NA, NA, NA, NA))), 
+    #       shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
+    theme(strip.background = element_blank(), legend.position = "right") #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y")
+  ggsave(filename = paste0("figures/y_meas_sd_canaper_1pnl", fig_out), 
+         width = 20, height = 20, units = "cm", dpi = dpi2plot)
   
   # precision
   canaper_mean_stats %>% 
@@ -443,7 +474,7 @@ for(i in 1:length(forms2print)){
     theme(strip.background = element_blank(), legend.position = "right") + 
     facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
   ggsave(filename = paste0("figures/prec_sd_canaper", fig_out), 
-         width = 25, height = 15, units = "cm", dpi = 200)
+         width = 25, height = 15, units = "cm", dpi = dpi2plot)
   
   # recall
   canaper_mean_stats %>% 
@@ -463,32 +494,8 @@ for(i in 1:length(forms2print)){
     theme(strip.background = element_blank(), legend.position = "right") + 
     facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
   ggsave(filename = paste0("figures/reca_sd_canaper", fig_out), 
-         width = 25, height = 15, units = "cm", dpi = 200)
+         width = 25, height = 15, units = "cm", dpi = dpi2plot)
 }
-
-
-canaper_mean_stats %>% 
-  mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
-         cat2map = paste0(treat, "-" , imputation)) %>% 
-  filter(imputation != "random") %>% 
-  ggplot(aes(x = samp_frac, y = mean_fmes, ymin = mean_fmes - sd_fmes, ymax = mean_fmes + sd_fmes,
-             color = imputation, shape = treat)) +
-  geom_pointrange(position = position_dodge2(width = .01, padding = 0.1)) + 
-  scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
-  geom_line(aes(linetype = imputation)) + 
-  #scale_linetype_manual(values = c("solid", "twodash", "dotted")) +
-  labs(#title = "Endemism categorization", 
-    x = "Proportion of tips removed", y = "Mean F-score", 
-    color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
-  theme_classic(base_size = 12) + 
-  ylim(c(0.35, .9)) +
-  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
-  guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3), shape = c(NA, NA, NA))), 
-         shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
-  theme(strip.background = element_blank(), legend.position = "right") + 
-  facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y")
-ggsave(filename = paste0("figures/y_meas_sd_canaper_2pnl", ".pdf"), 
-       width = 30, height = 15, units = "cm", dpi = 300)
 
 ## animated #####
 library(gganimate)
@@ -507,23 +514,23 @@ f_meas_pt <- canaper_mean_stats %>%
   labs(#title = "Endemism categorization", 
     x = "Proportion of tips removed", y = "Mean F-score", 
     color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
-  theme_classic(base_size = 12) + 
+  theme_classic(base_size = 20) + 
   ylim(c(0.35, .9)) +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
   guides(shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8))), 
          colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3), shape = c(NA, NA, NA)))) +
   theme(strip.background = element_blank(), legend.position = "right") + 
-  facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y") +
+  #facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y") +
   transition_reveal(samp_frac, keep_last = T)
-animate(f_meas_pt, width = 30, height = 15, units = "cm", 
-        res = 200, nframes = 60,  fps = 10, duration = 10, 
+animate(f_meas_pt, width = 20, height = 20, units = "cm", 
+        res = 200, nframes = 60,  fps = 10, duration = 20, 
         start_pause = 2, end_pause = 60)
 anim_save(filename = "figures/f_meas_anim.gif")
 
 
 f_meas_pt2 <- canaper_mean_stats %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
-         cat2map = paste0(treat, "-" , imputation)) %>% head()
+         cat2map = paste0(treat, "-" , imputation)) %>% 
   filter(imputation != "random") %>% 
   ggplot(aes(x = samp_frac, y = mean_fmes, ymin = mean_fmes - sd_fmes, ymax = mean_fmes + sd_fmes,
              color = imputation, shape = treat)) +
@@ -540,11 +547,22 @@ f_meas_pt2 <- canaper_mean_stats %>%
   guides(shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8))), 
          colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3), shape = c(NA, NA, NA)))) +
   theme(strip.background = element_blank(), legend.position = "right") + 
-  facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y") +
+  #facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y") +
   transition_states(cat2map, transition_length = 2, state_length = 1, wrap = F) +
   ease_aes('sine-in-out')
-animate(f_meas_pt2, width = 30, height = 15, units = "cm", 
+animate(f_meas_pt2, width = 25, height = 25, units = "cm", 
         res = 200, nframes = 60,  fps = 10, duration = 10, 
         start_pause = 2, end_pause = 60)
 anim_save(filename = "figures/f_meas_anim2.gif")
 
+# descriptives ####
+canaper_mean_stats %>% 
+  dplyr::select(samp_frac, treat, imputation, mean_fmes)%>% # mean
+  gather(key, value, -samp_frac, -treat, -imputation) %>%
+  filter(treat == "rand-pr" #, imputation == "none" #, samp_frac == 0.3
+  ) %>% #head()
+  group_by(key, samp_frac, treat,imputation) %>% 
+  summarise(min = min(value, na.rm = T), 
+            max = max(value, na.rm = T)) %>% 
+  filter(samp_frac == 0.5) %>% 
+    view
