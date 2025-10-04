@@ -58,6 +58,7 @@ autocor_mean_df %>% saveRDS("output/autocor_mean_df.rds") ; autocor_mean_df %>% 
 } else {
   autocor_mean_df <- readRDS("output/autocor_mean_df.rds")
 }
+
 # figures #####
 library(patchwork)
 forms2print <- c(".png", ".pdf", ".svg") 
@@ -238,8 +239,14 @@ pl_long <- "
   DDHH
   DDHH
   "
-free(moran_pd_pt) + free(moran_pe_pt) + free(moran_rpd_pt) + free(moran_rpe_pt) +
-  free(moran_rand_pd_pt) + free(moran_rand_pe_pt) + free(moran_rand_rpd_pt) + free(moran_rand_rpe_pt) +
+(moran_pd_pt) + 
+  (moran_pe_pt) + 
+  (moran_rpd_pt) + 
+  (moran_rpe_pt) +
+  (moran_rand_pd_pt) + 
+  (moran_rand_pe_pt) + 
+  (moran_rand_rpd_pt) + 
+  (moran_rand_rpe_pt) +
   plot_layout(guides = "collect", design = pl_long, axis_titles = "collect", tag_level = "new")
 
 for(i in 1:length(forms2print)){
