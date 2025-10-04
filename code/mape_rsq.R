@@ -886,12 +886,12 @@ ggsave(filename = paste0("figures/rsq_mean-all_pnl", fig_out),
 mape_means %>% 
   dplyr::select(samp_frac, treat, imputation, starts_with("mean"))%>% # mean sd
   gather(key, value, -samp_frac, -treat, -imputation) %>% 
-  filter(treat != "rand-pr" #, imputation == "none" #, samp_frac == 0.3
-  ) %>% 
-  ggplot(aes(x = as.factor(samp_frac), y = value, col = imputation)) +
+  #filter(treat != "rand-pr" #, imputation == "none" #, samp_frac == 0.3) %>% 
+  ggplot(aes(x = as.factor(samp_frac), y = value, col = treat)) +
   geom_boxplot(outlier.colour = "red", varwidth = T, na.rm = T) +
   #geom_point(col = "coral", cex = .5) + 
   theme_bw() + 
+  labs(x = "Proportion of tips removed", y = "mean MAPE") +
   geom_hline(yintercept = 20, col = "darkgray") +
   #geom_hline(yintercept = 10, col = "steelblue", alpha = .5) +
   facet_wrap(~key, scales = "fixed", ncol = 2)
@@ -899,32 +899,39 @@ mape_means %>%
 rsq_means %>% 
   dplyr::select(samp_frac, treat, imputation, starts_with("mean"))%>% # mean sd
   gather(key, value, -samp_frac, -treat, -imputation) %>% 
-  filter(treat != "rand-pr" #, imputation == "none" #, samp_frac == 0.3
-  ) %>%
-  ggplot(aes(x = as.factor(samp_frac), y = value, col = imputation)) +
+  #filter(treat != "rand-pr" #, imputation == "none" #, samp_frac == 0.3) %>%
+  ggplot(aes(x = as.factor(samp_frac), y = value, col = treat)) +
   geom_boxplot(outlier.colour = "red", varwidth = T, na.rm = T) +
   #geom_point(col = "coral", cex = .5) + 
-  theme_bw() + geom_hline(yintercept = 0.6, col = "darkgray") +
+  theme_bw() + 
+  labs(x = "Proportion of tips removed", y = "mean R2") +
+  geom_hline(yintercept = 0.6, col = "darkgray") +
   facet_wrap(~key, scales = "fixed", ncol = 2)
 
 # get descriptive numbers ####
 mape_means %>% 
   dplyr::select(samp_frac, treat, imputation, starts_with("mean"))%>% # mean sd
   gather(key, value, -samp_frac, -treat, -imputation) %>% 
-  filter(treat != "rand-pr" , imputation != "random" #, samp_frac == 0.3
+  filter(#treat != "rand-pr" #, imputation == "none" #, samp_frac == 0.3
          ) %>% #head()
   #ggplot(aes(x = samp_frac, y = value)) + geom_point()
-  group_by(key, samp_frac, treat, imputation) %>% 
+  ungroup() %>% 
+  group_by(key , samp_frac, 
+    treat#, imputation
+           ) %>% 
   summarise(min = min(value, na.rm = T), 
-            max = max(value, na.rm = T)) %>%
+            max = max(value, na.rm = T),
+            mean = mean(value, na.rm = T)) %>% 
   filter(samp_frac == 0.5) %>% view
 
 rsq_means %>% 
   dplyr::select(samp_frac, treat, imputation, starts_with("mean"))%>% # mean
   gather(key, value, -samp_frac, -treat, -imputation) %>%
-  filter(treat != "rand-pr" , imputation != "none" #, samp_frac == 0.3
-  ) %>% #head()
-  group_by(key, samp_frac, treat,imputation) %>% 
-  summarise(min = min(value, na.rm = T), 
-            max = max(value, na.rm = T)) %>% 
-    filter(samp_frac <= 0.3, max < 0.6) %>% view
+  filter(#treat != "rand-pr" , #imputation == "none" #, samp_frac == 0.3
+         ) %>% ungroup() %>% 
+  group_by(key, samp_frac, treat #, imputation
+           ) %>%
+  summarize(min = min(value, na.rm = T), 
+            max = max(value, na.rm = T),
+            mean = mean(value, na.rm = T)) %>% 
+    filter(samp_frac == 0.5) %>% view
