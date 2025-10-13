@@ -5,7 +5,9 @@ library(yardstick)
 # empirical full data
 cols2sel <- c("site", 
               "pd_obs", "pe_obs", "rpd_obs", "rpe_obs", 
-              "pd_rand_mean","pe_rand_mean", "rpd_rand_mean", "rpe_rand_mean")
+              "pd_rand_mean","pe_rand_mean", "rpd_rand_mean", "rpe_rand_mean"
+              #"pd_obs_z", "pe_obs_z", "rpd_obs_z", "rpe_obs_z" , "endem_type" 
+              )
 
 canaper_emp_raw <- readRDS("output/canaper/canaper_empirical.rds")
 canaper_emp <- canaper_emp_raw %>% 
@@ -16,7 +18,8 @@ canaper_emp <- canaper_emp_raw %>%
 canaper_res_all <- readRDS("output/canaper_all_data_res.rds")
 
 # one value per sim ####
-canaper_all_df <- left_join(canaper_res_all %>% ungroup(), 
+canaper_all_df <- left_join(canaper_res_all %>% 
+                              dplyr::select(any_of(c(names(canaper_emp), "sim_n"))) %>% ungroup(), 
                             canaper_emp %>% ungroup() %>% 
                               dplyr::select(-c(treat:imputation)) %>% 
                               rename_if(is.numeric, ~paste0("emp_", .x)), by = join_by("site"))
@@ -28,19 +31,19 @@ stats_sim_df <- canaper_all_df %>%
             mape_pe  = mape_vec(truth = emp_pe_obs, estimate = pe_obs, na_rm = T),
             mape_rpd  = mape_vec(truth = emp_rpd_obs, estimate = rpd_obs, na_rm = T),
             mape_rpe  = mape_vec(truth = emp_rpe_obs, estimate = rpe_obs, na_rm = T),
-            mape_pd_rand  = mape_vec(truth = emp_pd_rand_mean, estimate = pd_rand_mean, na_rm = T),
-            mape_pe_rand  = mape_vec(truth = emp_pe_rand_mean, estimate = pe_rand_mean, na_rm = T),
-            mape_rpd_rand  = mape_vec(truth = emp_rpd_rand_mean, estimate = rpd_rand_mean, na_rm = T),
-            mape_rpe_rand  = mape_vec(truth = emp_rpe_rand_mean, estimate = rpe_rand_mean, na_rm = T),
+            mape_pd_rand_mean  = mape_vec(truth = emp_pd_rand_mean, estimate = pd_rand_mean, na_rm = T),
+            mape_pe_rand_mean  = mape_vec(truth = emp_pe_rand_mean, estimate = pe_rand_mean, na_rm = T),
+            mape_rpd_rand_mean  = mape_vec(truth = emp_rpd_rand_mean, estimate = rpd_rand_mean, na_rm = T),
+            mape_rpe_rand_mean  = mape_vec(truth = emp_rpe_rand_mean, estimate = rpe_rand_mean, na_rm = T),
             
             rsq_pd  = rsq_vec(truth = emp_pd_obs, estimate = pd_obs, na_rm = T),
             rsq_pe  = rsq_vec(truth = emp_pe_obs, estimate = pe_obs, na_rm = T),
             rsq_rpd  = rsq_vec(truth = emp_rpd_obs, estimate = rpd_obs, na_rm = T),
             rsq_rpe  = rsq_vec(truth = emp_rpe_obs, estimate = rpe_obs, na_rm = T),
-            rsq_pd_rand  = rsq_vec(truth = emp_pd_rand_mean, estimate = pd_rand_mean, na_rm = T),
-            rsq_pe_rand  = rsq_vec(truth = emp_pe_rand_mean, estimate = pe_rand_mean, na_rm = T),
-            rsq_rpd_rand  = rsq_vec(truth = emp_rpd_rand_mean, estimate = rpd_rand_mean, na_rm = T),
-            rsq_rpe_rand  = rsq_vec(truth = emp_rpe_rand_mean, estimate = rpe_rand_mean, na_rm = T)
+            rsq_pe_rand_mean  = rsq_vec(truth = emp_pe_rand_mean, estimate = pe_rand_mean, na_rm = T),
+            rsq_pd_rand_mean  = rsq_vec(truth = emp_pd_rand_mean, estimate = pd_rand_mean, na_rm = T),
+            rsq_rpd_rand_mean  = rsq_vec(truth = emp_rpd_rand_mean, estimate = rpd_rand_mean, na_rm = T),
+            rsq_rpe_rand_mean  = rsq_vec(truth = emp_rpe_rand_mean, estimate = rpe_rand_mean, na_rm = T)
   )
 
 # one panel for all
@@ -83,16 +86,16 @@ stats_sim_df %>%
 # mean and sd table
 mape_means <- stats_sim_df %>% 
   select(sim_n, samp_frac, treat,imputation, contains("mape")) %>% 
-  ungroup() %>% group_by(samp_frac, treat, imputation) %>%
-  summarise(across(mape_pd:mape_rpe_rand, ~mean(.x, na.rm = T), .names = "mean_{.col}"),
-            across(mape_pd:mape_rpe_rand, ~sd(.x, na.rm = T), .names = "sd_{.col}"))
+  ungroup() %>% group_by(samp_frac, treat, imputation) %>% 
+  summarise(across(mape_pd:mape_rpe_rand_mean, ~mean(.x, na.rm = T), .names = "mean_{.col}"),
+            across(mape_pd:mape_rpe_rand_mean, ~sd(.x, na.rm = T), .names = "sd_{.col}"))
 
 rsq_means <- stats_sim_df %>% 
   select(sim_n, samp_frac, treat,imputation, contains("rsq")) %>% 
   ungroup() %>% group_by(samp_frac, treat, imputation) %>%
-  summarise(across(rsq_pd:rsq_rpe_rand, ~mean(.x, na.rm = T), .names = "mean_{.col}"),
-            across(rsq_pd:rsq_rpe_rand, ~sd(.x, na.rm = T), .names = "sd_{.col}"),
-            across(rsq_pd:rsq_rpe_rand, ~sum(!is.na(.x)), .names = "n_{.col}"))
+  summarise(across(rsq_pd:rsq_rpe_rand_mean, ~mean(.x, na.rm = T), .names = "mean_{.col}"),
+            across(rsq_pd:rsq_rpe_rand_mean, ~sd(.x, na.rm = T), .names = "sd_{.col}"),
+            across(rsq_pd:rsq_rpe_rand_mean, ~sum(!is.na(.x)), .names = "n_{.col}"))
 
 # mean values across sims #### 
 # get mean across 100 sims per samp fraction, pruning and imputation methods
@@ -113,19 +116,19 @@ m_stats_df <- avg_df %>%
             mape_pe  = mape_vec(truth = emp_pe_obs, estimate = m_pe_obs, na_rm = T), 
             mape_rpd  = mape_vec(truth = emp_rpd_obs, estimate = m_rpd_obs, na_rm = T), 
             mape_rpe  = mape_vec(truth = emp_rpe_obs, estimate = m_rpe_obs, na_rm = T), 
-            mape_pd_rand  = mape_vec(truth = emp_pd_rand_mean, estimate = m_pd_rand_mean, na_rm = T), 
-            mape_pe_rand  = mape_vec(truth = emp_pe_rand_mean, estimate = m_pe_rand_mean, na_rm = T), 
-            mape_rpd_rand  = mape_vec(truth = emp_rpd_rand_mean, estimate = m_rpd_rand_mean, na_rm = T), 
-            mape_rpe_rand  = mape_vec(truth = emp_rpe_rand_mean, estimate = m_rpe_rand_mean, na_rm = T),
+            mape_pd_rand_mean  = mape_vec(truth = emp_pd_rand_mean, estimate = m_pd_rand_mean, na_rm = T), 
+            mape_pe_rand_mean  = mape_vec(truth = emp_pe_rand_mean, estimate = m_pe_rand_mean, na_rm = T), 
+            mape_rpd_rand_mean  = mape_vec(truth = emp_rpd_rand_mean, estimate = m_rpd_rand_mean, na_rm = T), 
+            mape_rpe_rand_mean  = mape_vec(truth = emp_rpe_rand_mean, estimate = m_rpe_rand_mean, na_rm = T),
             
             rsq_pd  = rsq_vec(truth = emp_pd_obs, estimate = m_pd_obs, na_rm = T),
             rsq_pe  = rsq_vec(truth = emp_pe_obs, estimate = m_pe_obs, na_rm = T),
             rsq_rpd  = rsq_vec(truth = emp_rpd_obs, estimate = m_rpd_obs, na_rm = T),
             rsq_rpe  = rsq_vec(truth = emp_rpe_obs, estimate = m_rpe_obs, na_rm = T),
-            rsq_pd_rand  = rsq_vec(truth = emp_pd_rand_mean, estimate = m_pd_rand_mean, na_rm = T),
-            rsq_pe_rand  = rsq_vec(truth = emp_pe_rand_mean, estimate = m_pe_rand_mean, na_rm = T),
-            rsq_rpd_rand  = rsq_vec(truth = emp_rpd_rand_mean, estimate = m_rpd_rand_mean, na_rm = T),
-            rsq_rpe_rand  = rsq_vec(truth = emp_rpe_rand_mean, estimate = m_rpe_rand_mean, na_rm = T)
+            rsq_pd_rand_mean  = rsq_vec(truth = emp_pd_rand_mean, estimate = m_pd_rand_mean, na_rm = T),
+            rsq_pe_rand_mean  = rsq_vec(truth = emp_pe_rand_mean, estimate = m_pe_rand_mean, na_rm = T),
+            rsq_rpd_rand_mean = rsq_vec(truth = emp_rpd_rand_mean, estimate = m_rpd_rand_mean, na_rm = T),
+            rsq_rpe_rand_mean = rsq_vec(truth = emp_rpe_rand_mean, estimate = m_rpe_rand_mean, na_rm = T)
   )
 
 # Figures #####
@@ -140,7 +143,9 @@ mape_pd_sd_pt <- mape_means %>%
   #filter(imputation != "random") %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_mape_pd, ymin = mean_mape_pd - sd_mape_pd, ymax = mean_mape_pd + sd_mape_pd,
+  ggplot(aes(x = samp_frac, y = mean_mape_pd, 
+             ymin = mean_mape_pd - sd_mape_pd, 
+             ymax = mean_mape_pd + sd_mape_pd,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
@@ -158,7 +163,9 @@ mape_pd_sd_pt <- mape_means %>%
 mape_pe_sd_pt <- mape_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_mape_pe, ymin = mean_mape_pe - sd_mape_pe, ymax = mean_mape_pe + sd_mape_pe,
+  ggplot(aes(x = samp_frac, y = mean_mape_pe, 
+             ymin = mean_mape_pe - sd_mape_pe, 
+             ymax = mean_mape_pe + sd_mape_pe,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
@@ -176,7 +183,9 @@ mape_pe_sd_pt <- mape_means %>%
 mape_rpd_sd_pt <- mape_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_mape_rpd, ymin = mean_mape_rpd - sd_mape_rpd, ymax = mean_mape_rpd + sd_mape_rpd,
+  ggplot(aes(x = samp_frac, y = mean_mape_rpd, 
+             ymin = mean_mape_rpd - sd_mape_rpd, 
+             ymax = mean_mape_rpd + sd_mape_rpd,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
@@ -194,7 +203,9 @@ mape_rpd_sd_pt <- mape_means %>%
 mape_rpe_sd_pt <- mape_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_mape_rpe, ymin = mean_mape_rpe - sd_mape_rpe, ymax = mean_mape_rpe + sd_mape_rpe,
+  ggplot(aes(x = samp_frac, y = mean_mape_rpe, 
+             ymin = mean_mape_rpe - sd_mape_rpe, 
+             ymax = mean_mape_rpe + sd_mape_rpe,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
@@ -211,13 +222,15 @@ mape_rpe_sd_pt <- mape_means %>%
 # randPD
 mape_pd_rand_sd_pt <- mape_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
-         cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_mape_pd_rand, ymin = mean_mape_pd_rand - sd_mape_pd_rand, ymax = mean_mape_pd_rand + sd_mape_pd_rand,
+         cat2map = paste0(treat, "-" , imputation)) %>% 
+  ggplot(aes(x = samp_frac, y = mean_mape_pd_rand_mean, 
+             ymin = mean_mape_pd_rand_mean - sd_mape_pd_rand_mean, 
+             ymax = mean_mape_pd_rand_mean + sd_mape_pd_rand_mean,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
   geom_line(aes(linetype = imputation)) + 
-  labs(subtitle = "Randomized Mean Phylogenetic Diversity (randPD)", 
+  labs(subtitle = "Mean Randomized Phylogenetic Diversity (randPD)", 
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
@@ -230,12 +243,14 @@ mape_pd_rand_sd_pt <- mape_means %>%
 mape_pe_rand_sd_pt <- mape_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_mape_pe_rand, ymin = mean_mape_pe_rand - sd_mape_pe_rand, ymax = mean_mape_pe_rand + sd_mape_pe_rand,
+  ggplot(aes(x = samp_frac, y = mean_mape_pe_rand_mean, 
+             ymin = mean_mape_pe_rand_mean - sd_mape_pe_rand_mean, 
+             ymax = mean_mape_pe_rand_mean + sd_mape_pe_rand_mean,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
   geom_line(aes(linetype = imputation)) +
-  labs(subtitle = "Randomized Mean Phylogenetic Endemism (randPE)", 
+  labs(subtitle = "Mean Randomized Phylogenetic Endemism (randPE)", 
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
@@ -248,12 +263,14 @@ mape_pe_rand_sd_pt <- mape_means %>%
 mape_rpd_rand_sd_pt <- mape_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_mape_rpd_rand, ymin = mean_mape_rpd_rand - sd_mape_rpd_rand, ymax = mean_mape_rpd_rand + sd_mape_rpd_rand,
+  ggplot(aes(x = samp_frac, y = mean_mape_rpd_rand_mean, 
+             ymin = mean_mape_rpd_rand_mean - sd_mape_rpd_rand_mean, 
+             ymax = mean_mape_rpd_rand_mean + sd_mape_rpd_rand_mean,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
   geom_line(aes(linetype = imputation)) +
-  labs(subtitle = "Randomized Mean Relative Phylogenetic Diversity (randRPD)", 
+  labs(subtitle = "Mean Randomized Relative Phylogenetic Diversity (randRPD)", 
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
@@ -266,12 +283,14 @@ mape_rpd_rand_sd_pt <- mape_means %>%
 mape_rpe_rand_sd_pt <- mape_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_mape_rpe_rand, ymin = mean_mape_rpe_rand - sd_mape_rpe_rand, ymax = mean_mape_rpe_rand + sd_mape_rpe_rand,
+  ggplot(aes(x = samp_frac, y = mean_mape_rpe_rand_mean, 
+             ymin = mean_mape_rpe_rand_mean - sd_mape_rpe_rand_mean, 
+             ymax = mean_mape_rpe_rand_mean + sd_mape_rpe_rand_mean,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
   geom_line(aes(linetype = imputation)) +
-  labs(subtitle = "Randomized Mean Relative Phylogenetic Endemism (randRPE)", 
+  labs(subtitle = "Mean Randomized Relative Phylogenetic Endemism (randRPE)", 
        x = "Proportion of tips removed", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
@@ -284,12 +303,14 @@ mape_rpe_rand_sd_pt <- mape_means %>%
 mape_pd_rand_sd_pt <- mape_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_mape_pd_rand, ymin = mean_mape_pd_rand - sd_mape_pd_rand, ymax = mean_mape_pd_rand + sd_mape_pd_rand,
+  ggplot(aes(x = samp_frac, y = mean_mape_pd_rand_mean, 
+             ymin = mean_mape_pd_rand_mean - sd_mape_pd_rand_mean, 
+             ymax = mean_mape_pd_rand_mean + sd_mape_pd_rand_mean,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
   geom_line(aes(linetype = imputation)) +
-  labs(subtitle = "Randomized Mean Phylogenetic Diversity (randPD)", 
+  labs(subtitle = "Mean Randomized Phylogenetic Diversity (randPD)", 
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
@@ -302,12 +323,14 @@ mape_pd_rand_sd_pt <- mape_means %>%
 mape_pe_rand_sd_pt <- mape_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_mape_pe_rand, ymin = mean_mape_pe_rand - sd_mape_pe_rand, ymax = mean_mape_pe_rand + sd_mape_pe_rand,
+  ggplot(aes(x = samp_frac, y = mean_mape_pe_rand_mean, 
+             ymin = mean_mape_pe_rand_mean - sd_mape_pe_rand_mean, 
+             ymax = mean_mape_pe_rand_mean + sd_mape_pe_rand_mean,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
   geom_line(aes(linetype = imputation)) +
-  labs(subtitle = "Randomized Mean Phylogenetic Endemism (randPE)", 
+  labs(subtitle = "Mean Randomized Phylogenetic Endemism (randPE)", 
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
@@ -320,12 +343,14 @@ mape_pe_rand_sd_pt <- mape_means %>%
 mape_rpd_rand_sd_pt <- mape_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_mape_rpd_rand, ymin = mean_mape_rpd_rand - sd_mape_rpd_rand, ymax = mean_mape_rpd_rand + sd_mape_rpd_rand,
+  ggplot(aes(x = samp_frac, y = mean_mape_rpd_rand_mean, 
+             ymin = mean_mape_rpd_rand_mean - sd_mape_rpd_rand_mean, 
+             ymax = mean_mape_rpd_rand_mean + sd_mape_rpd_rand_mean,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
   geom_line(aes(linetype = imputation)) +
-  labs(subtitle = "Randomized Mean Relative Phylogenetic Diversity (randRPD)", 
+  labs(subtitle = "Mean Randomized Relative Phylogenetic Diversity (randRPD)", 
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
@@ -338,12 +363,14 @@ mape_rpd_rand_sd_pt <- mape_means %>%
 mape_rpe_rand_sd_pt <- mape_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_mape_rpe_rand, ymin = mean_mape_rpe_rand - sd_mape_rpe_rand, ymax = mean_mape_rpe_rand + sd_mape_rpe_rand,
+  ggplot(aes(x = samp_frac, y = mean_mape_rpe_rand_mean, 
+             ymin = mean_mape_rpe_rand_mean - sd_mape_rpe_rand_mean, 
+             ymax = mean_mape_rpe_rand_mean + sd_mape_rpe_rand_mean,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
   geom_line(aes(linetype = imputation)) +
-  labs(subtitle = "Randomized Mean Relative Phylogenetic Endemism (randRPE)", 
+  labs(subtitle = "Mean Randomized Relative Phylogenetic Endemism (randRPE)", 
        x = "Proportion of tips removed", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
@@ -384,7 +411,9 @@ for(i in 1:length(forms2print)){
 rsq_pd_sd_pt <- rsq_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_rsq_pd, ymin = mean_rsq_pd - sd_rsq_pd, ymax = mean_rsq_pd + sd_rsq_pd,
+  ggplot(aes(x = samp_frac, y = mean_rsq_pd, 
+             ymin = mean_rsq_pd - sd_rsq_pd, 
+             ymax = mean_rsq_pd + sd_rsq_pd,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
@@ -402,7 +431,9 @@ rsq_pd_sd_pt <- rsq_means %>%
 rsq_pe_sd_pt <- rsq_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_rsq_pe, ymin = mean_rsq_pe - sd_rsq_pe, ymax = mean_rsq_pe + sd_rsq_pe,
+  ggplot(aes(x = samp_frac, y = mean_rsq_pe, 
+             ymin = mean_rsq_pe - sd_rsq_pe, 
+             ymax = mean_rsq_pe + sd_rsq_pe,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
@@ -411,6 +442,7 @@ rsq_pe_sd_pt <- rsq_means %>%
        x = "", y = expression("R"^2), 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
+  theme(strip.background = element_blank(), legend.position = "right", axis.title.y = element_text(angle = 0, vjust = 0.5)) +
   guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 ,3, 4), shape = c(NA, NA, NA, NA))), 
          shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) + 
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
@@ -419,7 +451,9 @@ rsq_pe_sd_pt <- rsq_means %>%
 rsq_rpd_sd_pt <- rsq_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_rsq_rpd, ymin = mean_rsq_rpd - sd_rsq_rpd, ymax = mean_rsq_rpd + sd_rsq_rpd,
+  ggplot(aes(x = samp_frac, y = mean_rsq_rpd, 
+             ymin = mean_rsq_rpd - sd_rsq_rpd, 
+             ymax = mean_rsq_rpd + sd_rsq_rpd,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
@@ -437,7 +471,9 @@ rsq_rpd_sd_pt <- rsq_means %>%
 rsq_rpe_sd_pt <- rsq_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_rsq_rpe, ymin = mean_rsq_rpe - sd_rsq_rpe, ymax = mean_rsq_rpe + sd_rsq_rpe,
+  ggplot(aes(x = samp_frac, y = mean_rsq_rpe, 
+             ymin = mean_rsq_rpe - sd_rsq_rpe, 
+             ymax = mean_rsq_rpe + sd_rsq_rpe,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
@@ -454,13 +490,15 @@ rsq_rpe_sd_pt <- rsq_means %>%
 # randPD
 rsq_pd_rand_sd_pt <- rsq_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
-         cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_rsq_pd_rand, ymin = mean_rsq_pd_rand - sd_rsq_pd_rand, ymax = mean_rsq_pd_rand + sd_rsq_pd_rand,
+         cat2map = paste0(treat, "-" , imputation)) %>% 
+  ggplot(aes(x = samp_frac, y = mean_rsq_pd_rand_mean, 
+             ymin = mean_rsq_pd_rand_mean - sd_rsq_pd_rand_mean, 
+             ymax = mean_rsq_pd_rand_mean + sd_rsq_pd_rand_mean,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
   geom_line(aes(linetype = imputation)) +
-  labs(subtitle = "Randomized Mean Phylogenetic Diversity (randPD)", 
+  labs(subtitle = "Mean Randomized Phylogenetic Diversity (randPD)", 
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
@@ -473,12 +511,14 @@ rsq_pd_rand_sd_pt <- rsq_means %>%
 rsq_pe_rand_sd_pt <- rsq_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_rsq_pe_rand, ymin = mean_rsq_pe_rand - sd_rsq_pe_rand, ymax = mean_rsq_pe_rand + sd_rsq_pe_rand,
+  ggplot(aes(x = samp_frac, y = mean_rsq_pe_rand_mean, 
+             ymin = mean_rsq_pe_rand_mean - sd_rsq_pe_rand_mean, 
+             ymax = mean_rsq_pe_rand_mean + sd_rsq_pe_rand_mean,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
   geom_line(aes(linetype = imputation)) +
-  labs(subtitle = "Randomized Mean Phylogenetic Endemism (randPE)", 
+  labs(subtitle = "Mean Randomized Phylogenetic Endemism (randPE)", 
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
@@ -491,12 +531,14 @@ rsq_pe_rand_sd_pt <- rsq_means %>%
 rsq_rpd_rand_sd_pt <- rsq_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_rsq_rpd_rand, ymin = mean_rsq_rpd_rand - sd_rsq_rpd_rand, ymax = mean_rsq_rpd_rand + sd_rsq_rpd_rand,
+  ggplot(aes(x = samp_frac, y = mean_rsq_rpd_rand_mean, 
+             ymin = mean_rsq_rpd_rand_mean - sd_rsq_rpd_rand_mean, 
+             ymax = mean_rsq_rpd_rand_mean + sd_rsq_rpd_rand_mean,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
   geom_line(aes(linetype = imputation)) +
-  labs(subtitle = "Randomized Mean Relative Phylogenetic Diversity (randRPD)", 
+  labs(subtitle = "Mean Randomized Relative Phylogenetic Diversity (randRPD)", 
        x = "", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
@@ -509,12 +551,14 @@ rsq_rpd_rand_sd_pt <- rsq_means %>%
 rsq_rpe_rand_sd_pt <- rsq_means %>% 
   mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
          cat2map = paste0(treat, "-" , imputation)) %>%
-  ggplot(aes(x = samp_frac, y = mean_rsq_rpe_rand, ymin = mean_rsq_rpe_rand - sd_rsq_rpe_rand, ymax = mean_rsq_rpe_rand + sd_rsq_rpe_rand,
+  ggplot(aes(x = samp_frac, y = mean_rsq_rpe_rand_mean, 
+             ymin = mean_rsq_rpe_rand_mean - sd_rsq_rpe_rand_mean, 
+             ymax = mean_rsq_rpe_rand_mean + sd_rsq_rpe_rand_mean,
              color = imputation, shape = treat)) +
   geom_pointrange(position = position_dodge2(width = .03, padding = 0.15)) + 
   scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
   geom_line(aes(linetype = imputation)) +
-  labs(subtitle = "Randomized Mean Relative Phylogenetic Endemism (randRPE)", 
+  labs(subtitle = "Mean Randomized Relative Phylogenetic Endemism (randRPE)", 
        x = "Proportion of tips removed", y = "", 
        color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 

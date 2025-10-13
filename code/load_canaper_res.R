@@ -2,9 +2,12 @@ library(tidyverse)
 
 cols2sel <- c("site", 
               "pd_obs", "pe_obs", "rpd_obs", "rpe_obs", 
-              "pd_rand_mean","pe_rand_mean", "rpd_rand_mean", "rpe_rand_mean")
+              "pd_rand_mean","pe_rand_mean", "rpd_rand_mean", "rpe_rand_mean",
+              "pd_obs_z", "pe_obs_z", "rpd_obs_z", "rpe_obs_z" 
+              ,"endem_type" 
+              )
 
-run_load = T
+run_load = F
 if(run_load){
 # load pruned ####
 rnd_canaper_fls <- list.files("output/canaper", "canaper_rand_pr_[0-9]", all.files = T, full.names = T)
@@ -326,4 +329,3 @@ saveRDS(all_canape_res, "output/canaper_all_data_res.rds")
 } else {
   all_canape_res <- readRDS("output/canaper_all_data_res.rds")
 }
-
