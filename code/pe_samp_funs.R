@@ -142,3 +142,74 @@ get_t2t_metrics=function(ref_tree, compar_tree, sum, sim, norm){
              phylo_info_dist = PhylogeneticInfoDistance(ref_tree, compar_tree, normalize = norm)
              )
 }
+
+# simulate trees given average node age fixed topology
+# gamma may produce more asymmetric tree shapes
+# shape controls the concentration of node ages, larger make them more clustered while lower make them more spread
+sim_fixed_topology_ages <- function(topology, nrep, root_age,
+                                         mean_node_age, sd_node_age,
+                                         min_edge, 
+                                         dist = c("normal", "gamma", "exponential")) {
+  dist <- match.arg(dist)
+  out <- vector("list", nrep)
+  
+  ntip <- length(topology$tip.label)
+  nnodes <- topology$Nnode
+  internal_nodes <- (ntip + 1):(ntip + nnodes)
+  
+  for (i in seq_len(nrep)) {
+    tr <- topology
+    ages <- numeric(ntip + nnodes)
+    ages[1:ntip] <- 0
+    ages[ntip + 1] <- root_age
+    
+    k <- length(internal_nodes) - 1
+    
+    if (k > 0) {
+      x <- switch(dist,
+                  normal = rnorm(k, mean = mean_node_age, sd = sd_node_age), 
+                  gamma  = rgamma(k, shape = (mean_node_age / sd_node_age)^2, scale = sd_node_age^2 / mean_node_age),
+                  exponential = rexp(k, rate = 1 / mean_node_age)
+      )
+      
+      x <- pmin(pmax(x, min_edge), root_age - min_edge)
+      x <- sort(x, decreasing = T)
+      
+      ages[internal_nodes[-1]] <- x
+    }
+    
+    bl <- ages[tr$edge[, 1]] - ages[tr$edge[, 2]]
+    if (any(bl <= 0)) {
+      stop("WARNING!! Non-positive branch lengths") # if stops adjust mean_node_age, sd_node_age, or root_age.
+    }
+    tr$edge.length <- bl
+    out[[i]] <- tr
+  }
+  out
+}
+
+# simulates trees with a fixed topology, branch lengths drawn from exponential distribution
+# smaller rate retrieve longer branches (spread), while larger rate shorter branches (compact)
+sim_fixed_topo_exp_br <- function(topology, nrep , rate) {
+  out <- vector("list", nrep)
+  for (i in seq_len(nrep)) {
+    tr <- topology
+    bl <- rexp(nrow(tr$edge), rate = rate)
+    tr$edge.length <- pmax(bl, 1e-6)
+    tr <- multi2di(tr)
+    tr <- phytools::force.ultrametric(tree = tr, method = "nnls", message = F)
+    out[[i]] <- tr
+  }
+  out
+}
+
+# scale a tree to a given root age
+set_tree_root_age <- function(tree, root_age) {
+  nh <- nodeHeights(tree) # current root age (height of tree)
+  current_root_age <- max(nh[, 2]) # height above root for each edge end
+  
+  scale <- root_age / current_root_age # scale branch lengths
+  tree$edge.length <- tree$edge.length * scale
+  
+  tree
+}
