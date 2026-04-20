@@ -59,11 +59,11 @@ for(j in 1:length(lat_samp_prop)){
   lat_trs %>% saveRDS(paste0("output/pruned_trees/lateral_pruned_trs_", lat_samp_prop[j], ".rds"))
 }
 
-## marginal pruning ####
+## bilateral pruning ####
 marg_samp_prop <- seq(from = .025, to = 0.975, by = .025)
 cat2filt <- paste0(rep("perc_", length(marg_samp_prop)+1), c(marg_samp_prop, 1))
 
-# marginal percentiles to remove
+# bilateral percentiles to remove
 marg_cat2filt_ls <- list(c(head(cat2filt, 1), tail(cat2filt, 1)),
                     c(head(cat2filt, 2), tail(cat2filt, 2)),
                     c(head(cat2filt, 4), tail(cat2filt, 4)),
@@ -111,8 +111,6 @@ for(i in 1:length(marg_fls)){
 
 # viz BM sims  ####
 library(ggtree)
-ggtree(targ_tre, aes(color = trait), continuous = 'colour', yscale = "trait") + 
-  scale_color_viridis_c() + theme_minimal()
 
 # plot five random simulated characters
 data.frame(sim_char) %>% 
