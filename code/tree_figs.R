@@ -566,7 +566,7 @@ n_prn_ts %>% sum
 
 # imputed trees
 im_trs_p <- dir("output/imputed_trees/", full.names = T)
-im_trs_p <- im_trs_p[-which(grepl("_rand_imp_", im_trs_p),im_trs_p)]
+#im_trs_p <- im_trs_p[-which(grepl("_rand_imp_", im_trs_p),im_trs_p)]
 
 n_imp_ts <- c()
 for(i in 1:length(im_trs_p)){
@@ -574,3 +574,70 @@ for(i in 1:length(im_trs_p)){
 }
 
 n_imp_ts %>% sum()
+
+# compare simulated trees with different node ages ####
+
+# load simulated trees
+yng_trees <- readRDS("output/sim_trees_100_age.rds")
+old_trees <- readRDS("output/sim_trees_300_age.rds")
+cnt_trees %>% saveRDS("output/sim_trees_217_age.rds")
+exp_trees %>% saveRDS("output/sim_trees_exp_brlen.rds")
+
+typ_tre <-  "rectangular" # "roundrect" # "fan"
+
+# panel
+pl_lay <- "
+  AA#BBCCDDEE
+  AA#BBCCDDEE
+  AA#BBCCDDEE
+  "
+
+# fern empirical tree
+fern_full <- fern_tre %>% 
+  ggtree(layout = typ_tre, ladderize = T, size = .2) + 
+  geom_nodepoint(size = .1, alpha = .55, col = "red") +
+  labs(title = "Empirical tree") + theme_tree2()
+
+dir.create("figures/sim_trees/")
+
+sim_trs_ls <- list()
+for(i in 1:length(old_trees)){
+  young_tr_p <- yng_trees[[i]] %>% 
+    ggtree(layout = typ_tre, ladderize = T, size = .1) + 
+    geom_nodepoint(size = .1, alpha = .55, col = "red") +
+    labs(title = "Young nodes (100 myr)") + theme_tree2()
+  
+  old_tr_p <- old_trees[[i]] %>% 
+    ggtree(layout = typ_tre, ladderize = T, size = .1) + 
+    geom_nodepoint(size = .1, alpha = .55, col = "red") +
+    labs(title = "Old nodes (300 myr)") + theme_tree2()
+  
+  cnt_tr_p <- cnt_trees[[i]] %>% 
+    ggtree(layout = typ_tre, ladderize = T, size = .1) + 
+    geom_nodepoint(size = .1, alpha = .55, col = "red") +
+    labs(title = "Middle nodes (217 mry)") + theme_tree2()
+  
+  exp_tr_p <- exp_trees[[i]] %>% 
+    ggtree(layout = typ_tre, ladderize = T, size = .1) + 
+    geom_nodepoint(size = .1, alpha = .55, col = "red") +
+    labs(title = "Exp branch lengths") + theme_tree2()
+  
+  sim_trs_ls[[i]] <- free(fern_full %>% revts) + 
+    free(old_tr_p %>% revts) + free(cnt_tr_p %>% revts) + free(young_tr_p %>% revts) +
+    free(exp_tr_p %>% revts) +
+    plot_layout(guides = "collect", design = pl_lay, axis_titles = "collect", tag_level = "keep")
+  
+  ggsave(filename = paste0("figures/sim_trees/sim_trees_", typ_tre,"_pnl_", i,".png"), 
+         width = 45, height = 25, units = "cm", dpi = 300)
+}
+
+# animate plots 
+library(magick)
+# load figs
+img_path <- list.files("figures/sim_trees/", full.names = T)
+img_list <- lapply(img_path, image_read)
+
+img_joined <- image_join(img_list)
+img_animated <- image_animate(img_joined, fps = 10, loop = 0, optimize = T)
+
+img_animated %>% image_write(image = ., path = "figures/sim_trees_anima.gif")
