@@ -11,23 +11,31 @@ fern_tre <- read.tree("output/nitta_node-named.tre")
 tax_tbl <- read.csv("output/fern_taxonomy_ncbi.csv") %>% 
   mutate(tip_names = sub(pattern = "(\\_.*?)\\_", "\\1-", tip_names))
 
+# pruning conditional controls
+run_rand_rand <- T ; run_late_rand <- T ; run_marg_rand <- T # pruned and randomly imputed trees
+run_rand_tax <- T  ; run_late_tax <- T  ; run_marg_tax <- T  # pruned and taxonomically imputed trees
+meth2impt <- c("root", "random") 
+n_cores <- 3 # 8
+
+names2load <- c("fern", "young", "old", "cnt", "exp")
+
+# imputations ####
+for(m in 1:length(names2load)){
+  to_load <- names2load[m]
+  out_fold <- to_load
+
 # load pruned trees
-rand_fls <- list.files("output/pruned_trees", "rand_pruned",     all.files = T, full.names = T)
-late_fls <- list.files("output/pruned_trees", "lateral_pruned",  all.files = T, full.names = T)
-marg_fls <- list.files("output/pruned_trees", "marginal_pruned", all.files = T, full.names = T)
+rand_fls <- list.files(paste0("output/pruned_trees/", to_load), "rand_pruned",     all.files = T, full.names = T)
+late_fls <- list.files(paste0("output/pruned_trees/", to_load), "lateral_pruned",  all.files = T, full.names = T)
+marg_fls <- list.files(paste0("output/pruned_trees/", to_load), "marginal_pruned", all.files = T, full.names = T)
 
 rand_frc <- readr::parse_number(rand_fls)
 late_frc <- readr::parse_number(late_fls)
 marg_frc <- readr::parse_number(marg_fls)
 
-dir.create("output/imputed_trees/")
+dir.create(paste0("output/imputed_trees/", to_load), recursive = T)
 
-run_rand_rand <- F ; run_late_rand <- F ; run_marg_rand <- F # pruned and randomly imputed trees
-run_rand_tax <- T  ; run_late_tax <- T  ; run_marg_tax <- T  # pruned and taxonomically imputed trees
-meth2impt <- c("root", "random") 
-n_cores <- 3
-
-# add tips location at random ####
+## add tips at random ####
 # random pruned
 if(run_rand_rand){
   for(j in 1:length(rand_fls)){
@@ -39,7 +47,8 @@ if(run_rand_rand){
     for(i in 1:length(targ_tr_ls)){
       impt_tr_rmd[[i]] <- add.random(tree = targ_tr_ls[[i]], tips = tips2add_ls[[i]]) 
     }
-    impt_tr_rmd %>% saveRDS(paste0("output/imputed_trees/rand_pr_rand_imp_", rand_frc[j], ".rds"))
+    impt_tr_rmd %>% 
+      saveRDS(paste0("output/imputed_trees/", out_fold,"/rand_pr_rand_imp_", rand_frc[j], ".rds"))
   }
 } 
 
@@ -54,7 +63,8 @@ if(run_late_rand) {
     for(i in 1:length(targ_tr_ls)){
       impt_tr_rmd[[i]] <- add.random(tree = targ_tr_ls[[i]], tips = tips2add_ls[[i]]) 
     }
-    impt_tr_rmd %>% saveRDS(paste0("output/imputed_trees/late_pr_rand_imp_", late_frc[j], ".rds"))
+    impt_tr_rmd %>% 
+      saveRDS(paste0("output/imputed_trees/", out_fold, "/late_pr_rand_imp_", late_frc[j], ".rds"))
   }
 }
 
@@ -69,14 +79,16 @@ if(run_marg_rand){
     for(i in 1:length(targ_tr_ls)){
       impt_tr_rmd[[i]] <- add.random(tree = targ_tr_ls[[i]], tips = tips2add_ls[[i]]) 
     }
-    impt_tr_rmd %>% saveRDS(paste0("output/imputed_trees/marg_pr_rand_imp_", marg_frc[j], ".rds"))
+    impt_tr_rmd %>% 
+      saveRDS(paste0("output/imputed_trees/", out_fold,"/marg_pr_rand_imp_", marg_frc[j], ".rds"))
   }
 }
 
-# add tips to based on taxonomy ####
+## add tips to tree based on taxonomy ####
 for(f in 1:length(meth2impt)){
   where2impt <- meth2impt[f]
-# random pruned
+
+  # random pruned
 if(run_rand_tax){ 
   for(i in 1:length(rand_fls)){ 
     trees_ls <- readRDS(rand_fls[[i]]) # load set of trees
@@ -139,12 +151,13 @@ if(run_rand_tax){
     }
     print(paste0("## file: ", i))
     targ_tr_ls %>% 
-      saveRDS(paste0("output/imputed_trees/rand_pr_tax_imp_", where2impt, "_", rand_frc[i], ".rds"))
+      saveRDS(paste0("output/imputed_trees/", out_fold,"/rand_pr_tax_imp_", where2impt, "_", rand_frc[i], ".rds"))
   }
 } else {
   for(i in 1:length(rand_fls)){
-    targ_tr_ls <- readRDS(paste0("output/imputed_trees/rand_pr_tax_imp_", where2impt, "_",  rand_frc[i], ".rds"))
-    sapply(targ_tr_ls, Ntip) %>% table() %>%  print
+    targ_tr_ls <- 
+      readRDS(paste0("output/imputed_trees/", out_fold,"/rand_pr_tax_imp_", where2impt, "_",  rand_frc[i], ".rds"))
+    sapply(targ_tr_ls, Ntip) %>% table() %>% print
   }
 }
 
@@ -215,11 +228,12 @@ if(run_late_tax){
     }
     print(paste0("## file: ", i))
     targ_tr_ls %>% 
-      saveRDS(paste0("output/imputed_trees/late_pr_tax_imp_", where2impt, "_", late_frc[i], ".rds"))
-  }
+      saveRDS(paste0("output/imputed_trees/", out_fold,"/late_pr_tax_imp_", where2impt, "_", late_frc[i], ".rds"))
+  } 
 } else {
   for(i in 1:length(late_fls)){
-    targ_tr_ls <- readRDS(paste0("output/imputed_trees/late_pr_tax_imp_", where2impt, "_",  late_frc[i], ".rds"))
+    targ_tr_ls <- 
+      readRDS(paste0("output/imputed_trees/", out_fold,"/late_pr_tax_imp_", where2impt, "_",  late_frc[i], ".rds"))
     sapply(targ_tr_ls, Ntip) %>% table() %>%  print
   }
 }
@@ -291,11 +305,12 @@ if(run_marg_tax){
     }
     print(paste0("## file: ", i))
     targ_tr_ls %>% 
-      saveRDS(paste0("output/imputed_trees/marg_pr_tax_imp_", where2impt, "_", marg_frc[i], ".rds"))
+      saveRDS(paste0("output/imputed_trees/", out_fold,"/marg_pr_tax_imp_", where2impt, "_", marg_frc[i], ".rds"))
   }
 } else {
   for(i in 1:length(marg_fls)){
-    targ_tr_ls <- readRDS(paste0("output/imputed_trees/marg_pr_tax_imp_", where2impt, "_",  marg_frc[i], ".rds"))
+    targ_tr_ls <- 
+      readRDS(paste0("output/imputed_trees/", out_fold,"/marg_pr_tax_imp_", where2impt, "_",  marg_frc[i], ".rds"))
     sapply(targ_tr_ls, Ntip) %>% table() %>%  print
   }
 }
@@ -305,6 +320,7 @@ sapply(targ_tr_ls, is.rooted)# %>% table()
 sapply(targ_tr_ls, is.ultrametric)# %>% table()
 
 print(paste0("END ", where2impt, " imputation"))
+}
 }
 
 # check tips were imputed ok ####
