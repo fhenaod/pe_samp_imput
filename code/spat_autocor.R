@@ -167,7 +167,7 @@ moran_rand_pd_pt <- autocor_mean_df %>%
   geom_point(aes(x = 0, y = moran_emp$moran_pd_rand_mean), colour = "black", pch = 18, size = p_size) +
   geom_line(aes(linetype = imputation)) + 
   #scale_linetype_manual(values = c("solid", "twodash", "dotted")) +
-  labs(subtitle = "Randomized Mean Phylogenetic Diversity (randPD)", 
+  labs(subtitle = "Mean Randomized Phylogenetic Diversity (randPD)", 
        x = "", y = "", color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
   theme(strip.background = element_blank(), legend.position = "right") +
@@ -185,7 +185,7 @@ moran_rand_pe_pt <- autocor_mean_df %>%
   geom_point(aes(x = 0, y = moran_emp$moran_pe_rand_mean), colour = "black", pch = 18, size = p_size) +
   geom_line(aes(linetype = imputation)) + 
   #scale_linetype_manual(values = c("solid", "twodash", "dotted")) +
-  labs(subtitle = "Randomized Mean Phylogenetic Endemism (randPE)", 
+  labs(subtitle = "Mean Randomized Phylogenetic Endemism (randPE)", 
        x = "", y = "", color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
   theme(strip.background = element_blank(), legend.position = "right") +
@@ -203,7 +203,7 @@ moran_rand_rpd_pt <- autocor_mean_df %>%
   geom_point(aes(x = 0, y = moran_emp$moran_rpd_rand_mean), colour = "black", pch = 18, size = p_size) +
   geom_line(aes(linetype = imputation)) + 
   #scale_linetype_manual(values = c("solid", "twodash", "dotted")) +
-  labs(subtitle = "Randomized Mean Relative Phylogenetic Diversity (randRPD)", 
+  labs(subtitle = "Mean Randomized Relative Phylogenetic Diversity (randRPD)", 
        x = "", y = "", color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
   theme(strip.background = element_blank(), legend.position = "right") +
@@ -221,7 +221,7 @@ moran_rand_rpe_pt <- autocor_mean_df %>%
   geom_point(aes(x = 0, y = moran_emp$moran_rpe_rand_mean), colour = "black", pch = 18, size = p_size) +
   geom_line(aes(linetype = imputation)) + 
   #scale_linetype_manual(values = c("solid", "twodash", "dotted")) +
-  labs(subtitle = "Randomized Mean Relative Phylogenetic Endemism (randRPE)", 
+  labs(subtitle = "Mean Randomized Relative Phylogenetic Endemism (randRPE)", 
        x = "Proportion of tips removed", y = "", color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
   theme_classic(base_size = 12) + 
   theme(strip.background = element_blank(), legend.position = "right") +
