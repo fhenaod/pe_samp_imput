@@ -45,7 +45,7 @@ if(run_iter){
   saturation_point <- 10 #10600
 }
 
-# empirical dataset ####
+# empirical full dataset ####
 if(run_emp){
   rand_test <- cpr_rand_test(occ_mat, targ_tr, 
                                  null_model = "curveball", 
@@ -67,9 +67,20 @@ plyr::join_all(sig_list, by = 'site', type = 'left') %>%
   saveRDS(paste0("output/canaper/canaper_empirical.rds"))
 } else {}
 
-# pruned dataset ####
+# * * ####
+
+names2load <- c("fern", "young", "old", "cnt", "exp")
+
+
+# loops over all folders and among pruned and imputed trees
+for(m in 1:length(names2load)){ 
+  to_load <- names2load[m]
+  out_fold <- to_load
+  dir.create(paste0("output/canaper/", out_fold), recursive = T)
+  
+# pruned trees ####
 # random pruning
-rand_fls <- list.files("output/pruned_trees/", "rand_pruned", all.files = T, full.names = T)
+rand_fls <- list.files(paste0("output/pruned_trees/", to_load), "rand_pruned", all.files = T, full.names = T)
 rand_frc <- readr::parse_number(rand_fls)
 
 if(run_rand){
@@ -98,13 +109,13 @@ if(run_rand){
       print(paste0("iteration: ", i, "-",  j))
     }
     rand_canaper_ls %>% 
-      saveRDS(paste0("output/canaper/canaper_rand_pr_", rand_frc[i],".rds"))
+      saveRDS(paste0("output/canaper/", out_fold, "/canaper_rand_pr_", rand_frc[i],".rds"))
     gc()
   }
 } else {}
 
 # lateral pruning
-late_fls <- list.files("output/pruned_trees/", "lateral_pruned", all.files = T, full.names = T)
+late_fls <- list.files(paste0("output/pruned_trees/", to_load), "lateral_pruned", all.files = T, full.names = T)
 late_frc <- readr::parse_number(late_fls)
 
 if(run_late){
@@ -135,13 +146,13 @@ if(run_late){
       print(paste0("iteration: ", i, "-",  j))
     }
     late_canaper_ls %>% 
-      saveRDS(paste0("output/canaper/canaper_late_pr_", late_frc[i],".rds"))
+      saveRDS(paste0("output/canaper/", out_fold, "/canaper_late_pr_", late_frc[i],".rds"))
     gc()
   }
 } else {} 
 
 # marginal pruning
-marg_fls <- list.files("output/pruned_trees/", "marginal_pruned", all.files = T, full.names = T)
+marg_fls <- list.files(paste0("output/pruned_trees/", to_load), "marginal_pruned", all.files = T, full.names = T)
 marg_frc <- readr::parse_number(marg_fls)
 
 if(run_marg){
@@ -170,16 +181,16 @@ if(run_marg){
       print(paste0("iteration: ", i, "-",  j))
     }
     marg_canaper_ls %>% 
-      saveRDS(paste0("output/canaper/canaper_marg_pr_", marg_frc[i],".rds"))
+      saveRDS(paste0("output/canaper/", out_fold, "/canaper_marg_pr_", marg_frc[i],".rds"))
     gc()
   }
 } else {}
 
-# imputed dataset ####
+# imputed trees ####
 ## randomly imputed tree tips #####
 # random pruning
 pttr <- "rand_pr_rand_imp_"
-rand_fls <- list.files("output/imputed_trees/", pttr, all.files = T, full.names = T)
+rand_fls <- list.files(paste0("output/imputed_trees/", to_load), pttr, all.files = T, full.names = T)
 rand_frc <- readr::parse_number(rand_fls)
 
 if(run_rand_rand){
@@ -204,14 +215,15 @@ if(run_rand_rand){
       rand_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
       print(paste0("iteration: ", i, "-",  j))
     }
-    rand_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_", pttr, rand_frc[i],".rds"))
+    rand_canaper_ls %>% 
+      saveRDS(paste0("output/canaper/", out_fold, "/canaper_", pttr, rand_frc[i],".rds"))
     gc()
   }
 } else {}
 
 # lateral pruning
 pttr <- "late_pr_rand_imp_"
-late_fls <- list.files("output/imputed_trees/", pttr, all.files = T, full.names = T)
+late_fls <- list.files(paste0("output/imputed_trees/", to_load), pttr, all.files = T, full.names = T)
 late_frc <- readr::parse_number(late_fls)
 
 if(run_late_rand){
@@ -239,14 +251,15 @@ if(run_late_rand){
       late_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
       print(paste0("iteration: ", i, "-",  j))
     }
-    late_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_", pttr, late_frc[i],".rds"))
+    late_canaper_ls %>% 
+      saveRDS(paste0("output/canaper/", out_fold, "/canaper_", pttr, late_frc[i],".rds"))
     gc()
   }
 } else {}
 
 # marginal pruning
 pttr <- "marg_pr_rand_imp_"
-marg_fls <- list.files("output/imputed_trees/", pttr, all.files = T, full.names = T)
+marg_fls <- list.files(paste0("output/imputed_trees/", to_load), pttr, all.files = T, full.names = T)
 marg_frc <- readr::parse_number(marg_fls)
 
 if(run_marg_rand){
@@ -272,7 +285,8 @@ if(run_marg_rand){
       marg_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
       print(paste0("iteration: ", i, "-",  j))
     }
-    marg_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_", pttr, marg_frc[i],".rds"))
+    marg_canaper_ls %>% 
+      saveRDS(paste0("output/canaper/", out_fold, "/canaper_", pttr, marg_frc[i],".rds"))
     gc()
   }
 } else {}
@@ -281,7 +295,7 @@ if(run_marg_rand){
 # random pruning
 pttr <- c("rand_pr_tax_imp_root", "rand_pr_tax_imp_random")
 for(f in 1:length(pttr)){
-  rand_fls <- list.files("output/imputed_trees", pttr[f], all.files = T, full.names = T)
+  rand_fls <- list.files(paste0("output/imputed_trees/", to_load), pttr[f], all.files = T, full.names = T)
   rand_frc <- readr::parse_number(rand_fls)
   
   if(run_rand_tax){
@@ -307,7 +321,8 @@ for(f in 1:length(pttr)){
       rand_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
       print(paste0("iteration: ", i, "-",  j))
     }
-    rand_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_", pttr[f], "_", rand_frc[i],".rds"))
+    rand_canaper_ls %>% 
+      saveRDS(paste0("output/canaper/", out_fold, "/canaper_", pttr[f], "_", rand_frc[i],".rds"))
     gc()
     }
   } else {}
@@ -318,7 +333,7 @@ for(f in 1:length(pttr)){
 pttr <- c("late_pr_tax_imp_root", "late_pr_tax_imp_random")
 
 for(f in 1:length(pttr)){
-  late_fls <- list.files("output/imputed_trees/", pttr[f], all.files = T, full.names = T)
+  late_fls <- list.files(paste0("output/imputed_trees/", to_load), pttr[f], all.files = T, full.names = T)
   late_frc <- readr::parse_number(late_fls)
   if(run_late_tax){
     for(i in 1:length(late_fls)){
@@ -345,7 +360,8 @@ for(f in 1:length(pttr)){
         late_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
         print(paste0("iteration: ", i, "-",  j))
       }
-      late_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_", pttr[f], "_", late_frc[i],".rds"))
+      late_canaper_ls %>% 
+        saveRDS(paste0("output/canaper/", out_fold, "/canaper_", pttr[f], "_", late_frc[i],".rds"))
       gc()
     }
   } else {}
@@ -355,7 +371,7 @@ for(f in 1:length(pttr)){
 # marginal pruning
 pttr <- c("marg_pr_tax_imp_root", "marg_pr_tax_imp_random")
 for(f in 1:length(pttr)){
-  marg_fls <- list.files("output/imputed_trees/", pttr[f], all.files = T, full.names = T)
+  marg_fls <- list.files(paste0("output/imputed_trees/", to_load), pttr[f], all.files = T, full.names = T)
   marg_frc <- readr::parse_number(marg_fls)
   if(run_marg_tax){
     for(i in 1:length(marg_fls)){
@@ -380,9 +396,11 @@ for(f in 1:length(pttr)){
         marg_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
         print(paste0("iteration: ", i, "-",  j))
       }
-      marg_canaper_ls %>% saveRDS(paste0("output/canaper/canaper_", pttr[f], "_",  marg_frc[i],".rds"))
+      marg_canaper_ls %>% 
+        saveRDS(paste0("output/canaper/", out_fold, "/canaper_", pttr[f], "_",  marg_frc[i],".rds"))
       gc()
     }
   } else {}
   cat(paste0("END: ", pttr[f]))
+}
 }
