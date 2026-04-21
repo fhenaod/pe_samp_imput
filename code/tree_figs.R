@@ -580,8 +580,8 @@ n_imp_ts %>% sum()
 # load simulated trees
 yng_trees <- readRDS("output/sim_trees_100_age.rds")
 old_trees <- readRDS("output/sim_trees_300_age.rds")
-cnt_trees %>% saveRDS("output/sim_trees_217_age.rds")
-exp_trees %>% saveRDS("output/sim_trees_exp_brlen.rds")
+cnt_trees <- readRDS("output/sim_trees_217_age.rds")
+exp_trees <- readRDS("output/sim_trees_exp_brlen.rds")
 
 typ_tre <-  "rectangular" # "roundrect" # "fan"
 
