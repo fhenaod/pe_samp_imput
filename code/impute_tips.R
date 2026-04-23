@@ -19,7 +19,7 @@ n_cores <- 3 # 8
 
 names2load <- c("fern", "young", "old", "cnt", "exp")
 
-# imputations ####
+# imputation ####
 for(m in 1:length(names2load)){
   to_load <- names2load[m]
   out_fold <- to_load
@@ -146,7 +146,7 @@ if(run_rand_tax){
           }
       }
       ifelse(targ_tr_ls[[k]]$tip.label %in% fern_tre$tip.label %>% sum == length(fern_tre$tip.label), 
-             print(paste0("All tips imputed")), print(paste0("WARNING ! unequal number of tips")))
+             print(paste0("*** All tips imputed ***")), print(paste0("WARNING ! unequal number of tips")))
       print(paste0("-> tree: ", k))
     }
     print(paste0("## file: ", i))
@@ -223,7 +223,7 @@ if(run_late_tax){
         }
       }
       ifelse(targ_tr_ls[[k]]$tip.label %in% fern_tre$tip.label %>% sum == length(fern_tre$tip.label), 
-             print(paste0("All tips imputed")), print(paste0("WARNING ! unequal number of tips")))
+             print(paste0("*** All tips imputed ***")), print(paste0("WARNING ! unequal number of tips")))
       print(paste0("-> tree: ", k))
     }
     print(paste0("## file: ", i))
@@ -234,7 +234,7 @@ if(run_late_tax){
   for(i in 1:length(late_fls)){
     targ_tr_ls <- 
       readRDS(paste0("output/imputed_trees/", out_fold,"/late_pr_tax_imp_", where2impt, "_",  late_frc[i], ".rds"))
-    sapply(targ_tr_ls, Ntip) %>% table() %>%  print
+    sapply(targ_tr_ls, Ntip) %>% table() %>% print
   }
 }
 
@@ -311,7 +311,7 @@ if(run_marg_tax){
   for(i in 1:length(marg_fls)){
     targ_tr_ls <- 
       readRDS(paste0("output/imputed_trees/", out_fold,"/marg_pr_tax_imp_", where2impt, "_",  marg_frc[i], ".rds"))
-    sapply(targ_tr_ls, Ntip) %>% table() %>%  print
+    sapply(targ_tr_ls, Ntip) %>% table() %>% print
   }
 }
 
@@ -320,7 +320,7 @@ sapply(targ_tr_ls, is.rooted)# %>% table()
 sapply(targ_tr_ls, is.ultrametric)# %>% table()
 
 print(paste0("END ", where2impt, " imputation"))
-}
+  }
 }
 
 # check tips were imputed ok ####
