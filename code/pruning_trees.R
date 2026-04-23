@@ -121,10 +121,10 @@ for(i in 1:length(marg_fls)){
 
 # *Sim trees* #####
 # load simulated trees
-yng_trees <- readRDS("output/sim_trees_100_age.rds")
-old_trees <- readRDS("output/sim_trees_300_age.rds")
-cnt_trees <- readRDS("output/sim_trees_217_age.rds")
-exp_trees <- readRDS("output/sim_trees_exp_brlen.rds")
+yng_trees <- readRDS("output/sim_trees/sim_trees_100_age.rds")
+old_trees <- readRDS("output/sim_trees/sim_trees_300_age.rds")
+cnt_trees <- readRDS("output/sim_trees/sim_trees_217_age.rds")
+exp_trees <- readRDS("output/sim_trees/sim_trees_exp_brlen.rds")
 
 trs_ls <- list(yng_trees, old_trees, cnt_trees, exp_trees)
 
