@@ -53,6 +53,8 @@ exp_trees <- readRDS("output/sim_trees/sim_trees_exp_brlen.rds")
 trs_ls <- list(fern_tre, yng_trees, old_trees, cnt_trees, exp_trees)
 names(trs_ls) <- c("fern", "young", "old", "cnt", "exp")
 
+names2load <- c("fern", "young", "old", "cnt", "exp")
+
 # pruning ####
 if(prune_trs){
 dir.create("output/pruned_trees/")
@@ -126,8 +128,6 @@ for(i in 1:length(marg_cat2filt_ls)){
 } else {print("Spatial pruning skiped")}
 
 # imputation ####
-
-names2load <- c("fern", "young", "old", "cnt", "exp")
 
 run_late_rand <- F ; run_marg_rand <- F # spatially pruned and randomly imputed trees
 run_late_tax <- T  ; run_marg_tax <- T  # spatially pruned and taxonomically imputed trees
@@ -323,8 +323,6 @@ for(m in 1:length(names2load)){
   out_fold <- to_load
 
 ## only pruned ####
-late_fls <- list.files(paste0("output/pruned_trees/", to_load), "lateral_spat",  all.files = T, full.names = T)
-
 dir.create(paste0("output/canaper/", out_fold))
 
 # lateral pruning 
@@ -336,28 +334,11 @@ if(run_late){
     late_canaper_ls <- list()
     targ_tr_ls <- readRDS(late_fls[i])
     
-    ifelse(Ntip(targ_tr_ls) %>% max() <= Ntip(fern_tre), "Ok n tips", stop(print("Error")))
-    
-      ifelse(sum(names(occ_mat) %in% targ_tr_ls$tip.label) < 30, next, "")
-      
-      occ_mat2 <- occ_mat[rowSums(occ_mat[, which(targ_tr_ls$tip.label %in% colnames(occ_mat))]) > 0, ]
-      rand_test <- cpr_rand_test(occ_mat2, targ_tr_ls, 
-                                 null_model = "curveball", 
-                                 n_iterations = saturation_point,
-                                 n_reps = canaper_n_reps,
-                                 tbl_out = T)
-      
-      canape_res <- cpr_classify_endem(rand_test)
-      sig_list <- list(canape_res, 
-                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif")
-                       #, 
-                       #cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       #cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
-      )
-      
-      late_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
-      print(paste0("iteration: ", i))
+    tr_class <- class(targ_tr_ls) ; print(tr_class)
+    late_canaper_ls <- switch(as.character(tr_class), 
+                          list = run_canape_ls_trees(targ_tr_ls), 
+                          phylo = run_cananpe_tree(targ_tr_ls)
+                          )
 
     late_canaper_ls %>% 
       saveRDS(paste0("output/canaper/", out_fold, "/canaper_late_spat_pr_", late_frc[i],".rds"))
@@ -374,26 +355,14 @@ if(run_marg){
     marg_canaper_ls <- list()
     targ_tr_ls <- readRDS(marg_fls[i])
     
-      ifelse(sum(names(occ_mat) %in% targ_tr_ls$tip.label) < 30, next, "")
+    tr_class <- class(targ_tr_ls) ; print(tr_class)
+    marg_canaper_ls <- switch(as.character(tr_class), 
+                              list = run_canape_ls_trees(targ_tr_ls), 
+                              phylo = run_cananpe_tree(targ_tr_ls)
+                              )
       
-      occ_mat2 <- occ_mat[rowSums(occ_mat[, which(targ_tr_ls$tip.label %in% colnames(occ_mat))]) > 0, ]
-      rand_test <- cpr_rand_test(occ_mat2, targ_tr_ls, 
-                                 null_model = "curveball", 
-                                 n_iterations = saturation_point,
-                                 n_reps = canaper_n_reps,
-                                 tbl_out = T)
-      
-      canape_res <- cpr_classify_endem(rand_test)
-      sig_list <- list(canape_res, 
-                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif")
-                       #, 
-                       #cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       #cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
-      )
-      
-      marg_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
-      print(paste0("iteration: ", i))
+    marg_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
+    print(paste0("iteration: ", i))
     
     marg_canaper_ls %>% 
       saveRDS(paste0("output/canaper/", out_fold, "/canaper_marg_spat_pr_", marg_frc[i],".rds"))
@@ -412,25 +381,14 @@ if(run_late_rand){
     late_canaper_ls <- list()
     targ_tr_ls <- readRDS(late_fls[i])
     
-    ifelse(Ntip(targ_tr_ls) %>% max() <= Ntip(fern_tre), "Ok n tips", stop(print("Error")))
-    
-      ifelse(sum(names(occ_mat) %in% targ_tr_ls$tip.label) < 30, next, "")
-      rand_test <- cpr_rand_test(occ_mat, targ_tr_ls, 
-                                 null_model = "curveball", 
-                                 n_iterations = saturation_point,
-                                 n_reps = canaper_n_reps,
-                                 tbl_out = T)
+    tr_class <- class(targ_tr_ls) ; print(tr_class)
+    late_canaper_ls <- switch(as.character(tr_class), 
+                              list = run_canape_ls_trees(targ_tr_ls), 
+                              phylo = run_cananpe_tree(targ_tr_ls)
+                              )
       
-      canape_res <- cpr_classify_endem(rand_test)
-      sig_list <- list(canape_res, 
-                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"),
-                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
-      )
-      
-      late_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
-      print(paste0("iteration: ", i))
+    late_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
+    print(paste0("iteration: ", i))
 
     late_canaper_ls %>% 
       saveRDS(paste0("output/canaper/", out_fold, "/canaper_", pttr, late_frc[i],".rds"))
@@ -448,23 +406,14 @@ if(run_marg_rand){
     marg_canaper_ls <- list()
     targ_tr_ls <- readRDS(marg_fls[i])
 
-      ifelse(sum(names(occ_mat) %in% targ_tr_ls$tip.label) < 30, next, "")
-      rand_test <- cpr_rand_test(occ_mat, targ_tr_ls, 
-                                 null_model = "curveball", 
-                                 n_iterations = saturation_point,
-                                 n_reps = canaper_n_reps,
-                                 tbl_out = T)
+    tr_class <- class(targ_tr_ls) ; print(tr_class)
+    marg_canaper_ls <- switch(as.character(tr_class), 
+                              list = run_canape_ls_trees(targ_tr_ls), 
+                              phylo = run_cananpe_tree(targ_tr_ls)
+                              )
       
-      canape_res <- cpr_classify_endem(rand_test)
-      sig_list <- list(canape_res, 
-                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
-      )
-      
-      marg_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
-      print(paste0("iteration: ", i))
+    marg_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
+    print(paste0("iteration: ", i))
     
     marg_canaper_ls %>% 
       saveRDS(paste0("output/canaper/", out_fold, "/canaper_", pttr, marg_frc[i],".rds"))
@@ -484,25 +433,14 @@ for(f in 1:length(pttr)){
       late_canaper_ls <- list()
       targ_tr_ls <- readRDS(late_fls[i])
       
-      ifelse(Ntip(targ_tr_ls) %>% max() <= Ntip(fern_tre), "Ok n tips", stop(print("Error")))
-      
-        ifelse(sum(names(occ_mat) %in% targ_tr_ls$tip.label) < 30, next, "")
-        rand_test <- cpr_rand_test(occ_mat, targ_tr_ls, 
-                                   null_model = "curveball", 
-                                   n_iterations = saturation_point,
-                                   n_reps = canaper_n_reps,
-                                   tbl_out = T)
+      tr_class <- class(targ_tr_ls) ; print(tr_class)
+      late_canaper_ls <- switch(as.character(tr_class), 
+                                list = run_canape_ls_trees(targ_tr_ls), 
+                                phylo = run_cananpe_tree(targ_tr_ls)
+                                )
         
-        canape_res <- cpr_classify_endem(rand_test)
-        sig_list <- list(canape_res, 
-                         cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                         cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
-                         cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                         cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
-        )
-        
-        late_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
-        print(paste0("iteration: ", i))
+      late_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
+      print(paste0("iteration: ", i))
       
       late_canaper_ls %>% 
         saveRDS(paste0("output/canaper/", out_fold, "/canaper_", pttr[f], "_", late_frc[i],".rds"))
@@ -522,23 +460,14 @@ for(f in 1:length(pttr)){
       marg_canaper_ls <- list()
       targ_tr_ls <- readRDS(marg_fls[i])
       
-        ifelse(sum(names(occ_mat) %in% targ_tr_ls$tip.label) < 30, next, "")
-        rand_test <- cpr_rand_test(occ_mat, targ_tr_ls, 
-                                   null_model = "curveball", 
-                                   n_iterations = saturation_point,
-                                   n_reps = canaper_n_reps,
-                                   tbl_out = T)
+      tr_class <- class(targ_tr_ls) ; print(tr_class)
+      marg_canaper_ls <- switch(as.character(tr_class), 
+                                list = run_canape_ls_trees(targ_tr_ls), 
+                                phylo = run_cananpe_tree(targ_tr_ls)
+                                )
         
-        canape_res <- cpr_classify_endem(rand_test)
-        sig_list <- list(canape_res, 
-                         cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                         cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
-                         cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                         cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
-        )
-        
-        marg_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
-        print(paste0("iteration: ", i))
+      marg_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
+      print(paste0("iteration: ", i))
       
       marg_canaper_ls %>% 
         saveRDS(paste0("output/canaper/", out_fold, "/canaper_", pttr[f], "_",  marg_frc[i],".rds"))
