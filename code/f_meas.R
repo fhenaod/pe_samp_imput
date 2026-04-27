@@ -355,7 +355,11 @@ if(get_tabs2res){
 
 # make one big df
 canaper_res_df <- rbind(prun_res_all %>% mutate(imputation = "none"), 
-                        rand_imp_all, prun_tax_imp_node_all, prun_tax_imp_rand_all)
+                        rand_imp_all, 
+                        prun_tax_imp_node_all, prun_tax_imp_rand_all)
+
+out_fold <- "fern"
+canaper_res_df <- readRDS(paste0("output/canaper/canaper_all_data_res_", out_fold,".rds"))
 
 # join with empirical df
 canaper_res_all_df <- left_join(canaper_res_df, 
@@ -371,7 +375,9 @@ canaper_stat <- canaper_res_all_df %>%
   group_by(sim_n, samp_frac, treat, imputation) %>% 
   summarize(precision = precision_vec(truth = emp_endem_type, estimate = endem_type, na_rm = T),
             recall = recall_vec(truth = emp_endem_type, estimate = endem_type, na_rm = T),
-            f_mes = f_meas_vec(truth = emp_endem_type, estimate = endem_type, na_rm = T))
+            f_mes = f_meas_vec(truth = emp_endem_type, estimate = endem_type, na_rm = T),
+            m_ccr = mcc_vec(truth = emp_endem_type, estimate = endem_type, na_rm = T)
+            )
 
 canaper_mean_stats <- canaper_stat %>% 
   ungroup() %>% group_by(samp_frac, treat, imputation) %>% 
@@ -380,7 +386,10 @@ canaper_mean_stats <- canaper_stat %>%
             mean_reca = mean(recall, na.rm = T),
             sd_reca = sd(recall, na.rm = T),
             mean_fmes = mean(f_mes, na.rm = T),
-            sd_fmes = sd(f_mes, na.rm = T))
+            sd_fmes = sd(f_mes, na.rm = T),
+            mean_mcc = mean(m_ccr, na.rm = T),
+            sd_mcc = sd(m_ccr, na.rm = T),
+            )
 
 # figs #####
 forms2print <- c(".png", ".pdf", ".svg") 
@@ -521,6 +530,29 @@ for(i in 1:length(forms2print)){
     facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2)
   ggsave(filename = paste0("figures/reca_sd_canaper", fig_out), 
          width = 25, height = 15, units = "cm", dpi = dpi2plot)
+  
+  # mcc
+  canaper_mean_stats %>% 
+    mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"),
+           cat2map = paste0(treat, "-" , imputation)) %>% 
+    mutate(across(starts_with("sd"), ~replace_na(.x, 0))) %>%
+    ggplot(aes(x = samp_frac, y = mean_mcc, ymin = mean_mcc - sd_mcc, ymax = mean_mcc + sd_mcc,
+               color = imputation, shape = treat)) +
+    geom_pointrange(position = position_dodge2(width = .02, padding = 0.1)) + 
+    scale_shape_manual(labels = c("Lateral", "Lateral - Spatial", "Bilateral", "Bilateral - Spatial", "Random"), values = c(16, 17, 15, 18, 8)) +
+    geom_line(aes(linetype = imputation)) + 
+    #scale_linetype_manual(values = c("solid", "twodash", "dotted")) +
+    labs(#title = "Endemism categorization", 
+      x = "Proportion of tips removed", y = "Mean Matthews correlation coefficient", 
+      color = "Imputation", shape = "Pruning\nmethod", linetype = "Imputation") +
+    theme_classic(base_size = 12) + 
+    ylim(c(0.35, 0.97)) +
+    scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
+    guides(colour = guide_legend(override.aes = list(linetype = c(1, 2 , 3, 4), shape = c(NA, NA, NA, NA))), 
+           shape = guide_legend(override.aes = list(linetype = c(0, 0, 0, 0, 0), shape = c(16, 17, 15, 18, 8)))) +
+    theme(strip.background = element_blank(), legend.position = "right") #+ facet_wrap(~factor(is_imp, c("Only pruned", "Imputed")), labeller = , ncol = 2, scales = "free_y")
+  #ggsave(filename = paste0("figures/y_meas_sd_canaper", fig_out), 
+   #      width = 30, height = 15, units = "cm", dpi = dpi2plot)
 }
 
 ## animated #####
