@@ -251,3 +251,11 @@ data.frame(sim_char) %>%
   theme(legend.position = "none")
 ggsave("figures/tree_simchar.png", width = 25, height = 25, units = "cm", dpi = 200)
 
+# viz sim char hists #####
+data.frame(sim_char) %>% 
+  select(sample(1:100, 6)) %>% 
+  gather() %>% 
+  ggplot(aes(x = value)) + 
+  geom_histogram() + theme_minimal() +
+  facet_wrap(~ key, ncol = 2, scales = "fixed")
+
