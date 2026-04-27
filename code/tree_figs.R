@@ -390,6 +390,22 @@ full_spat_hist <- data2plt %>%
   geom_vline(aes(xintercept = mean(val)), color = "coral", linetype = "dashed")
 
 ## BM simulated character ####
+# tree and bar plot
+
+# phytools
+sim_char_df <- data.frame(sim_char)
+
+var_nam <- setNames(object = sim_char_df[, 1],  nm = row.names(sim_char_df))
+thp1 <- wrap_elements(~plotTree.wBars(ladderize(fern_tre, right = F),
+                         var_nam, #type = "fan", 
+                         lwd = 0.8, width = 0.5,# col = cols, 
+                         tip.label = F, fsize = 0.3)
+                      )
+
+thp1
+ggsave("figures/trees_sim_char.png", 
+       width = 25, height = 15, units = "cm", dpi = 200, bg = "white")
+
 #### lateral ####
 v2samp <- sample(2:100, 1, replace = F)
 
