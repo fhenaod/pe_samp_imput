@@ -181,9 +181,13 @@ canape_stats <- all_canape_res %>%
 
 head(canape_stats) %>% as.tibble()
 
-
-estim2sel <- c("m_pd", "m_pe", "m_rpd", "m_rpe", "m_pd_m", "m_pe_m", "m_rpd_m", "m_rpe_m") 
-metir2sel <- c("pd_obs", "pe_obs", "rpd_obs", "rpe_obs", "pd_rand_mean", "pe_rand_mean", "rpd_rand_mean", "rpe_rand_mean") 
+# metrics to estimate and viz
+estim2sel <- c("m_pd", "m_pe", "m_rpd", "m_rpe", 
+               "m_pd_m", "m_pe_m", "m_rpd_m", "m_rpe_m",
+               "m_pd_obs_z", "m_pe_obs_z", "m_rpd_obs_z", "m_rpe_obs_z") 
+metir2sel <- c("pd_obs", "pe_obs", "rpd_obs", "rpe_obs", 
+               "pd_rand_mean", "pe_rand_mean", "rpd_rand_mean", "rpe_rand_mean",
+               "pd_obs_z", "pe_obs_z", "rpd_obs_z", "rpe_obs_z") 
 
 pars_ls_dfs <- list()
 for(j in 1:length(cols2sel)){
