@@ -45,15 +45,15 @@ imput_trs <- F
 rn_canape <- F
 
 # load simulated trees
+rec_trees <- readRDS("output/sim_trees/sim_trees_20_age.rds")
 yng_trees <- readRDS("output/sim_trees/sim_trees_100_age.rds")
 old_trees <- readRDS("output/sim_trees/sim_trees_300_age.rds")
 cnt_trees <- readRDS("output/sim_trees/sim_trees_217_age.rds")
 exp_trees <- readRDS("output/sim_trees/sim_trees_exp_brlen.rds")
 
-trs_ls <- list(fern_tre, yng_trees, old_trees, cnt_trees, exp_trees)
-names(trs_ls) <- c("fern", "young", "old", "cnt", "exp")
-
-names2load <- c("fern", "young", "old", "cnt", "exp")
+trs_ls <- list(fern_tre, rec_trees, yng_trees, old_trees, cnt_trees, exp_trees)
+names(trs_ls) <- c("fern", "rec", "young", "old", "cnt", "exp")
+names2load <- c("fern", "rec", "young", "old", "cnt", "exp")
 
 # pruning ####
 if(prune_trs){
@@ -128,7 +128,6 @@ for(i in 1:length(marg_cat2filt_ls)){
 } else {print("Spatial pruning skiped")}
 
 # imputation ####
-
 run_late_rand <- F ; run_marg_rand <- F # spatially pruned and randomly imputed trees
 run_late_tax <- T  ; run_marg_tax <- T  # spatially pruned and taxonomically imputed trees
 
@@ -361,7 +360,6 @@ if(run_marg){
                               phylo = run_cananpe_tree(targ_tr_ls)
                               )
       
-    marg_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
     print(paste0("iteration: ", i))
     
     marg_canaper_ls %>% 
@@ -387,7 +385,6 @@ if(run_late_rand){
                               phylo = run_cananpe_tree(targ_tr_ls)
                               )
       
-    late_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
     print(paste0("iteration: ", i))
 
     late_canaper_ls %>% 
@@ -412,7 +409,6 @@ if(run_marg_rand){
                               phylo = run_cananpe_tree(targ_tr_ls)
                               )
       
-    marg_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
     print(paste0("iteration: ", i))
     
     marg_canaper_ls %>% 
@@ -428,6 +424,7 @@ pttr <- c("late_spat_pr_tax_imp_root", "late_spat_pr_tax_imp_random")
 for(f in 1:length(pttr)){
   late_fls <- list.files(paste0("output/imputed_trees/", to_load), pttr[f], all.files = T, full.names = T)
   late_frc <- readr::parse_number(late_fls)
+  
   if(run_late_tax){
     for(i in 1:length(late_fls)){
       late_canaper_ls <- list()
@@ -439,7 +436,6 @@ for(f in 1:length(pttr)){
                                 phylo = run_cananpe_tree(targ_tr_ls)
                                 )
         
-      late_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
       print(paste0("iteration: ", i))
       
       late_canaper_ls %>% 
@@ -455,6 +451,7 @@ pttr <- c("marg_spat_pr_tax_imp_root", "marg_spat_pr_tax_imp_random")
 for(f in 1:length(pttr)){
   marg_fls <- list.files(paste0("output/imputed_trees/", to_load), pttr[f], all.files = T, full.names = T)
   marg_frc <- readr::parse_number(marg_fls)
+  
   if(run_marg_tax){
     for(i in 1:length(marg_fls)){
       marg_canaper_ls <- list()
@@ -466,7 +463,6 @@ for(f in 1:length(pttr)){
                                 phylo = run_cananpe_tree(targ_tr_ls)
                                 )
         
-      marg_canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
       print(paste0("iteration: ", i))
       
       marg_canaper_ls %>% 

@@ -594,6 +594,7 @@ n_imp_ts %>% sum()
 # compare simulated trees with different node ages ####
 
 # load simulated trees
+rec_trees <- readRDS("output/sim_trees/sim_trees_20_age.rds")
 yng_trees <- readRDS("output/sim_trees/sim_trees_100_age.rds")
 old_trees <- readRDS("output/sim_trees/sim_trees_300_age.rds")
 cnt_trees <- readRDS("output/sim_trees/sim_trees_217_age.rds")
@@ -603,9 +604,9 @@ typ_tre <-  "rectangular" # "roundrect" # "fan"
 
 # panel
 pl_lay <- "
-  AA#BBCCDDEE
-  AA#BBCCDDEE
-  AA#BBCCDDEE
+  AA#BBCCDDEEFF
+  AA#BBCCDDEEFF
+  AA#BBCCDDEEFF
   "
 
 # fern empirical tree
@@ -618,6 +619,11 @@ dir.create("figures/sim_trees/")
 
 sim_trs_ls <- list()
 for(i in 1:length(old_trees)){
+  rec_tr_p <- rec_trees[[i]] %>% 
+    ggtree(layout = typ_tre, ladderize = T, size = .1) + 
+    geom_nodepoint(size = .1, alpha = .55, col = "red") +
+    labs(title = "Recent nodes (20 myr)") + theme_tree2()
+  
   young_tr_p <- yng_trees[[i]] %>% 
     ggtree(layout = typ_tre, ladderize = T, size = .1) + 
     geom_nodepoint(size = .1, alpha = .55, col = "red") +
@@ -639,7 +645,8 @@ for(i in 1:length(old_trees)){
     labs(title = "Exp branch lengths") + theme_tree2()
   
   sim_trs_ls[[i]] <- free(fern_full %>% revts) + 
-    free(old_tr_p %>% revts) + free(cnt_tr_p %>% revts) + free(young_tr_p %>% revts) +
+    free(old_tr_p %>% revts) + free(cnt_tr_p %>% revts) + 
+    free(young_tr_p %>% revts) + free(rec_tr_p %>% revts) +
     free(exp_tr_p %>% revts) +
     plot_layout(guides = "collect", design = pl_lay, axis_titles = "collect", tag_level = "keep")
   
