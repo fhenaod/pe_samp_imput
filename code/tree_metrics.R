@@ -79,3 +79,5 @@ ggsave(filename = paste0("figures/tre_met_mgl.png"),
 
 # panel with both
 ggpubr::ggarrange(spec_nor_p, spec_sta_p, nrow = 2)
+ggsave(filename = paste0("figures/tre_met_mgl_panel.png"), 
+       width = 30, height = 15, units = "cm", dpi = 300)
