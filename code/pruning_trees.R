@@ -46,8 +46,7 @@ tips2drop <- list()
                              replace = F)
     prn_trs <- lapply(X = tips2drop, function(X) drop.tip(phy = targ_tre, tip = X))
   }
-prn_trs %>% 
-  saveRDS(paste0("output/pruned_trees/", out_fold, "/rand_pruned_trs_", samp_prop[j], ".rds"))
+prn_trs %>% saveRDS(paste0("output/pruned_trees/", out_fold, "/rand_pruned_trs_", samp_prop[j], ".rds"))
 }
 
 ## lateral pruning ####
@@ -121,14 +120,14 @@ for(i in 1:length(marg_fls)){
 
 # *Sim trees* #####
 # load simulated trees
+rec_trees <- readRDS("output/sim_trees/sim_trees_20_age.rds")
 yng_trees <- readRDS("output/sim_trees/sim_trees_100_age.rds")
 old_trees <- readRDS("output/sim_trees/sim_trees_300_age.rds")
 cnt_trees <- readRDS("output/sim_trees/sim_trees_217_age.rds")
 exp_trees <- readRDS("output/sim_trees/sim_trees_exp_brlen.rds")
 
-trs_ls <- list(yng_trees, old_trees, cnt_trees, exp_trees)
-
-names(trs_ls) <- c("young", "old", "cnt", "exp")
+trs_ls <- list(rec_trees, yng_trees, old_trees, cnt_trees, exp_trees)
+names(trs_ls) <- c("rec", "young", "old", "cnt", "exp")
 
 # loop over all simulated trees and pruning proportions
 for(l in 1:length(trs_ls)){
@@ -195,7 +194,7 @@ for(i in 1:length(marg_cat2filt_ls)){
   marg_trs <- mapply(FUN = drop.tip, phy = targ_tre, tip = marg_tips2drop, SIMPLIFY = F)
   marg_trs %>% 
     saveRDS(paste0("output/pruned_trees/", out_fold, "/marginal_pruned_trs_", c(length(marg_cat2filt_ls[[i]])*.025), ".rds"))
-}
+  }
 }
 
 # check  pruned tree sizes ####
@@ -226,7 +225,7 @@ for(i in 1:length(marg_fls)){
   sapply(targ_tr_ls, Ntip) %>% 
     #max %>% 
     table() %>% print
-}
+  }
 }
 # viz tree with sim BM characters ####
 library(ggtree)
