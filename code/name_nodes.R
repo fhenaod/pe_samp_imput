@@ -14,18 +14,22 @@ x <- targ_tre$tip.label %>%
   data.frame(tip_names =.) %>% separate(tip_names, sep = "_", into = c("genus", "spp"), extra = "merge") %>%
   pull(genus) %>% unique() %>% sort()
 
-tax_dbase <- "itis" # "both"  #"ncbi" # 
+tax_dbase <- "ncbi" # "itis" # "both"  # 
 t <- tax_name(sci = c(x), get = c("phylum", "infradivision",
-                                    "class",  "infraclass",
-                                    "order",  "infraorder",
-                                    "family", "tribe", "genus"), db = tax_dbase)
+                                  "class",  "infraclass",
+                                  "order",  "infraorder",
+                                  "subfamily", "family", "superfamily",
+                                   "subtribe", "tribe", 
+                                  "genus"), db = tax_dbase)
 
 tax_table <- left_join(t, 
                        targ_tre$tip.label %>% data.frame(tip_names = .) %>% 
                          separate(tip_names, sep = "_", into = c("genus", "spp"), extra = "merge") %>% 
                          mutate(tip_names = paste0(genus, "_", spp))
                        )
-tax_table %>% filter(is.nan(family))
+tax_table %>% filter(is.na(family))
+tax_table %>% filter(is.na(subfamily))
+
 tax_table %>% write.csv("output/fern_taxonomy_ncbi.csv", row.names = F)
 
 # name tree nodes based on a taxonomic table ####
