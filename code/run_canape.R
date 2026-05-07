@@ -19,7 +19,7 @@ fern_com %>% colnames() %in% fern_tre$tip.label %>% table()
 dir.create("output/canaper/")
 
 run_iter <- F
-run_emp <- F ; run_rand <- F ; run_late <- F ; run_marg <- F # pruned trees
+run_emp <- F ; run_rand <- T ; run_late <- T ; run_marg <- T # pruned trees
 run_rand_rand <- F ; run_late_rand <- F ; run_marg_rand <- F # pruned and randomly imputed trees
 run_rand_tax <- T  ; run_late_tax <- T  ; run_marg_tax <- T  # pruned and taxonomically imputed trees
 
@@ -43,6 +43,7 @@ if(run_iter){
   saturation_point <- iter_sim_res$iteration[which.min(abs(dydx))]
 } else {
   saturation_point <- 10 #10600
+  print(saturation_point)
 }
 
 # empirical full dataset ####
@@ -67,13 +68,13 @@ plyr::join_all(sig_list, by = 'site', type = 'left') %>%
   saveRDS(paste0("output/canaper/canaper_empirical.rds"))
 } else {}
 
-# * * ####
-
-names2load <- c("fern", "young", "old", "cnt", "exp")
-
+# * pruned and imputed trees * ####
+names2load <- c(#"fern", 
+                "young", "old", "cnt", "exp")
 
 # loops over all folders and among pruned and imputed trees
 for(m in 1:length(names2load)){ 
+
   to_load <- names2load[m]
   out_fold <- to_load
   dir.create(paste0("output/canaper/", out_fold), recursive = T)
@@ -87,10 +88,12 @@ if(run_rand){
   for(i in 1:length(rand_fls)){
     rand_canaper_ls <- list()
     targ_tr_ls <- readRDS(rand_fls[i])
+    
     ifelse(sapply(targ_tr_ls, Ntip) %>% max() <= Ntip(fern_tre), "Ok n tips", stop(print("Error")))
     
     for(j in 1:length(targ_tr_ls)){
       occ_mat2 <- occ_mat[rowSums(occ_mat[, which(targ_tr_ls[[j]]$tip.label %in% colnames(occ_mat))]) > 0, ]
+      
       rand_test <- cpr_rand_test(occ_mat2, targ_tr_ls[[j]], 
                                  null_model = "curveball", 
                                  n_iterations = saturation_point,
@@ -99,10 +102,25 @@ if(run_rand){
       
       canape_res <- cpr_classify_endem(rand_test)
       sig_list <- list(canape_res, 
-                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, pd_signif), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, pe_signif), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpd") %>% dplyr::select(site, rpd_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpd_signif = NA)
+                       }
+                       ), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpe") %>% dplyr::select(site, rpe_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpe_signif = NA)
+                       })
                        )
       
       rand_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
@@ -136,11 +154,26 @@ if(run_late){
       
       canape_res <- cpr_classify_endem(rand_test)
       sig_list <- list(canape_res, 
-                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
-      )
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, pd_signif), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, pe_signif), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpd") %>% dplyr::select(site, rpd_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpd_signif = NA)
+                       }
+                       ), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpe") %>% dplyr::select(site, rpe_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpe_signif = NA)
+                       })
+                       )
       
       late_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
       print(paste0("iteration: ", i, "-",  j))
@@ -159,6 +192,7 @@ if(run_marg){
   for(i in 1:length(marg_fls)){
     marg_canaper_ls <- list()
     targ_tr_ls <- readRDS(marg_fls[i])
+    
     for(j in 1:length(targ_tr_ls)){
       ifelse(sum(names(occ_mat) %in% targ_tr_ls[[j]]$tip.label) < 30, next, "")
       
@@ -171,11 +205,26 @@ if(run_marg){
 
       canape_res <- cpr_classify_endem(rand_test)
       sig_list <- list(canape_res, 
-                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
-      )
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, pd_signif), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, pe_signif), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpd") %>% dplyr::select(site, rpd_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpd_signif = NA)
+                       }
+                       ), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpe") %>% dplyr::select(site, rpe_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpe_signif = NA)
+                       })
+                       )
       
       marg_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
       print(paste0("iteration: ", i, "-",  j))
@@ -197,6 +246,7 @@ if(run_rand_rand){
   for(i in 1:length(rand_fls)){
     rand_canaper_ls <- list()
     targ_tr_ls <- readRDS(rand_fls[i])
+    
     ifelse(sapply(targ_tr_ls, Ntip) %>% max() <= Ntip(fern_tre), "Ok n tips", stop(print("Error")))
     for(j in 1:length(targ_tr_ls)){
       rand_test <- cpr_rand_test(occ_mat, targ_tr_ls[[j]], 
@@ -207,11 +257,27 @@ if(run_rand_rand){
       
       canape_res <- cpr_classify_endem(rand_test)
       sig_list <- list(canape_res, 
-                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif")
-                       #, cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       #cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, pd_signif), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, pe_signif), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpd") %>% dplyr::select(site, rpd_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpd_signif = NA)
+                       }
+                       ), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpe") %>% dplyr::select(site, rpe_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpe_signif = NA)
+                       })
       )
+      
       rand_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
       print(paste0("iteration: ", i, "-",  j))
     }
@@ -242,11 +308,26 @@ if(run_late_rand){
 
       canape_res <- cpr_classify_endem(rand_test)
       sig_list <- list(canape_res, 
-                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif")
-                       #, cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       #cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
-      )
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, pd_signif), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, pe_signif), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpd") %>% dplyr::select(site, rpd_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpd_signif = NA)
+                       }
+                       ), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpe") %>% dplyr::select(site, rpe_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpe_signif = NA)
+                       })
+                       )
       
       late_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
       print(paste0("iteration: ", i, "-",  j))
@@ -276,11 +357,26 @@ if(run_marg_rand){
 
       canape_res <- cpr_classify_endem(rand_test)
       sig_list <- list(canape_res, 
-                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif")
-                       #, cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       #cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
-      )
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, pd_signif), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, pe_signif), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpd") %>% dplyr::select(site, rpd_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpd_signif = NA)
+                       }
+                       ), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpe") %>% dplyr::select(site, rpe_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpe_signif = NA)
+                       })
+                       )
       
       marg_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
       print(paste0("iteration: ", i, "-",  j))
@@ -302,6 +398,7 @@ for(f in 1:length(pttr)){
     for(i in 1:length(rand_fls)){
     rand_canaper_ls <- list()
     targ_tr_ls <- readRDS(rand_fls[i])
+    
     ifelse(sapply(targ_tr_ls, Ntip) %>% max() <= Ntip(fern_tre), "Ok n tips", stop(print("Error")))
     for(j in 1:length(targ_tr_ls)){
       rand_test <- cpr_rand_test(occ_mat, targ_tr_ls[[j]], 
@@ -312,11 +409,26 @@ for(f in 1:length(pttr)){
 
       canape_res <- cpr_classify_endem(rand_test)
       sig_list <- list(canape_res, 
-                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                       cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
-      )
+                       cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, pd_signif), 
+                       cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, pe_signif), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpd") %>% dplyr::select(site, rpd_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpd_signif = NA)
+                       }
+                       ), 
+                       tryCatch({
+                         cpr_classify_signif(rand_test, metric = "rpe") %>% dplyr::select(site, rpe_signif)
+                       },
+                       error = function(e) {
+                         message("cpr_classify_signif() failed: ", conditionMessage(e))
+                         cpr_classify_signif(rand_test, metric = "pd") %>% 
+                           select("site") %>% mutate(rpe_signif = NA)
+                       })
+                       )
       
       rand_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
       print(paste0("iteration: ", i, "-",  j))
@@ -351,11 +463,26 @@ for(f in 1:length(pttr)){
         
         canape_res <- cpr_classify_endem(rand_test)
         sig_list <- list(canape_res, 
-                         cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                         cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
-                         cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                         cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
-        )
+                         cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, pd_signif), 
+                         cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, pe_signif), 
+                         tryCatch({
+                           cpr_classify_signif(rand_test, metric = "rpd") %>% dplyr::select(site, rpd_signif)
+                         },
+                         error = function(e) {
+                           message("cpr_classify_signif() failed: ", conditionMessage(e))
+                           cpr_classify_signif(rand_test, metric = "pd") %>% 
+                             select("site") %>% mutate(rpd_signif = NA)
+                         }
+                         ), 
+                         tryCatch({
+                           cpr_classify_signif(rand_test, metric = "rpe") %>% dplyr::select(site, rpe_signif)
+                         },
+                         error = function(e) {
+                           message("cpr_classify_signif() failed: ", conditionMessage(e))
+                           cpr_classify_signif(rand_test, metric = "pd") %>% 
+                             select("site") %>% mutate(rpe_signif = NA)
+                         })
+                         )
         
         late_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
         print(paste0("iteration: ", i, "-",  j))
@@ -387,10 +514,25 @@ for(f in 1:length(pttr)){
         
         canape_res <- cpr_classify_endem(rand_test)
         sig_list <- list(canape_res, 
-                         cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
-                         cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
-                         cpr_classify_signif(rand_test, metric = "rpd") %>% select(site, "rpd_signif"), 
-                         cpr_classify_signif(rand_test, metric = "rpe") %>% select(site, "rpe_signif")
+                         cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, pd_signif), 
+                         cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, pe_signif), 
+                         tryCatch({
+                           cpr_classify_signif(rand_test, metric = "rpd") %>% dplyr::select(site, rpd_signif)
+                         },
+                         error = function(e) {
+                           message("cpr_classify_signif() failed: ", conditionMessage(e))
+                           cpr_classify_signif(rand_test, metric = "pd") %>% 
+                             select("site") %>% mutate(rpd_signif = NA)
+                         }
+                         ), 
+                         tryCatch({
+                           cpr_classify_signif(rand_test, metric = "rpe") %>% dplyr::select(site, rpe_signif)
+                         },
+                         error = function(e) {
+                           message("cpr_classify_signif() failed: ", conditionMessage(e))
+                           cpr_classify_signif(rand_test, metric = "pd") %>% 
+                             select("site") %>% mutate(rpe_signif = NA)
+                         })
         )
         
         marg_canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
