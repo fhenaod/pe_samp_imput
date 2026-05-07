@@ -4,16 +4,17 @@ library(tidyverse)
 cols2sel <- c("site", 
               "pd_obs", "pe_obs", "rpd_obs", "rpe_obs", 
               "pd_rand_mean","pe_rand_mean", "rpd_rand_mean", "rpe_rand_mean",
-              "pd_obs_z", "pe_obs_z", "rpd_obs_z", "rpe_obs_z" ,"endem_type" 
+              "pd_obs_z", "pe_obs_z", "rpd_obs_z", "rpe_obs_z" ,"endem_type",
+              "pd_signif", "pe_signif" #, "rpd_signif", "rpe_signif"
               )
 
 # folders to load 
-# names2load <- c("fern", "young", "old", "cnt", "exp")
+# names2load <- c("fern", "rec", "young", "old", "cnt", "exp")
 names2load <-list.dirs(path = "output/canaper/", full.names = F, recursive = F)
 print(names2load)
 
 # reads and consolidate results into a dataframe for each folder
-for(m in 1:length(names2load)){  
+for(m in 1:2){  
   to_load <- names2load[m]
   out_fold <- to_load
   
@@ -27,7 +28,7 @@ late_frc <- readr::parse_number(late_canaper_fls)
 marg_canaper_fls <- list.files(paste0("output/canaper/", to_load), "canaper_marg_pr_[0-9]", all.files = T, full.names = T)
 marg_frc <- readr::parse_number(marg_canaper_fls)
 
-# random
+# random pruned
 rnd_canape_df_ls <- list()
 for(i in 1:length(rnd_canaper_fls)){
   rnd_canape_ls <- readRDS(rnd_canaper_fls[i])
@@ -76,7 +77,7 @@ late_canape_df_ls <- list()
 for(i in 1:length(late_spat_canaper_fls)){
   late_canape_ls <- readRDS(late_spat_canaper_fls[i])
   late_canape_df_ls[[i]] <- late_canape_ls %>% 
-    select(all_of(cols2sel)) %>% 
+    dplyr::select(all_of(cols2sel)) %>% 
     mutate(sim_n = "none", samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "none")
 }
 late_spat_canape_all_df <- data.table::rbindlist(late_canape_df_ls) ; dim(late_spat_canape_all_df)
@@ -86,7 +87,7 @@ marg_canape_df_ls <- list()
 for(i in 1:length(marg_spat_canaper_fls)){
   marg_canape_ls <- readRDS(marg_spat_canaper_fls[i])
   marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
-    select(all_of(cols2sel)) %>% 
+    dplyr::select(all_of(cols2sel)) %>% 
     mutate(sim_n = "none", samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "none")
 }
 marg_spat_canape_all_df <- data.table::rbindlist(marg_canape_df_ls) ; dim(marg_spat_canape_all_df)
@@ -95,14 +96,14 @@ prun_res_all <- rbind(rnd_canape_all_df,
                       late_canape_all_df, marg_canape_all_df,
                       late_spat_canape_all_df, marg_spat_canape_all_df) ; dim(prun_res_all)
 
-# load pruned  - random imputed ####
+# load pruned - random imputed ####
 rnd_canaper_fls <- list.files(paste0("output/canaper/", to_load), "canaper_rand_pr_rand", all.files = T, full.names = T)
 rand_frc <- readr::parse_number(rnd_canaper_fls)
 
 late_canaper_fls <- list.files(paste0("output/canaper/", to_load), "canaper_late_pr_rand", all.files = T, full.names = T)
 late_frc <- readr::parse_number(late_canaper_fls)
 
-late_canaper_fls <- list.files(paste0("output/canaper/", to_load), "canaper_marg_pr_rand", all.files = T, full.names = T)
+marg_canaper_fls <- list.files(paste0("output/canaper/", to_load), "canaper_marg_pr_rand", all.files = T, full.names = T)
 marg_frc <- readr::parse_number(marg_canaper_fls)
 
 if(is_empty(rnd_canaper_fls)){
@@ -162,7 +163,7 @@ if(is_empty(rnd_canaper_fls)){
   for(i in 1:length(late_spat_canaper_fls)){
     late_canape_ls <- readRDS(late_spat_canaper_fls[i])
     late_canape_df_ls[[i]] <- late_canape_ls %>% 
-      select(all_of(cols2sel)) %>% 
+      dplyr::select(all_of(cols2sel)) %>% 
       mutate(sim_n = "none", samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "random")
   }
   late_spat_canape_all_df <- data.table::rbindlist(late_canape_df_ls) ; dim(late_spat_canape_all_df)
@@ -172,7 +173,7 @@ if(is_empty(rnd_canaper_fls)){
   for(i in 1:length(marg_spat_canaper_fls)){
     marg_canape_ls <- readRDS(marg_spat_canaper_fls[i])
     marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
-      select(all_of(cols2sel)) %>% 
+      dplyr::select(all_of(cols2sel)) %>% 
       mutate(sim_n = "none", samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "random")
   }
   marg_spat_canape_all_df <- data.table::rbindlist(marg_canape_df_ls) ; dim(marg_spat_canape_all_df)
@@ -242,7 +243,7 @@ late_canape_df_ls <- list()
 for(i in 1:length(late_spat_canaper_fls)){
   late_canape_ls <- readRDS(late_spat_canaper_fls[i])
   late_canape_df_ls[[i]] <- late_canape_ls %>% 
-    select(all_of(cols2sel)) %>% 
+    dplyr::select(all_of(cols2sel)) %>% 
     mutate(sim_n = "none", samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "taxonomy - node")
 }
 late_spat_canape_all_df <- data.table::rbindlist(late_canape_df_ls) ; dim(late_spat_canape_all_df)
@@ -252,7 +253,7 @@ marg_canape_df_ls <- list()
 for(i in 1:length(marg_spat_canaper_fls)){
   marg_canape_ls <- readRDS(marg_spat_canaper_fls[i])
   marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
-    select(all_of(cols2sel)) %>% 
+    dplyr::select(all_of(cols2sel)) %>% 
     mutate(sim_n = "none", samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "taxonomy - node")
 }
 marg_spat_canape_all_df <- data.table::rbindlist(marg_canape_df_ls) ; dim(marg_spat_canape_all_df)
@@ -320,7 +321,7 @@ late_canape_df_ls <- list()
 for(i in 1:length(late_spat_canaper_fls)){
   late_canape_ls <- readRDS(late_spat_canaper_fls[i])
   late_canape_df_ls[[i]] <- late_canape_ls %>% 
-    select(all_of(cols2sel)) %>% 
+    dplyr::select(all_of(cols2sel)) %>% 
     mutate(sim_n = "none", samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "taxonomy - random")
 }
 late_spat_canape_all_df <- data.table::rbindlist(late_canape_df_ls) ; dim(late_spat_canape_all_df)
@@ -330,7 +331,7 @@ marg_canape_df_ls <- list()
 for(i in 1:length(marg_spat_canaper_fls)){
   marg_canape_ls <- readRDS(marg_spat_canaper_fls[i])
   marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
-    select(all_of(cols2sel)) %>% 
+    dplyr::select(all_of(cols2sel)) %>% 
     mutate(sim_n = "none", samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "taxonomy - random")
 }
 marg_spat_canape_all_df <- data.table::rbindlist(marg_canape_df_ls) ; dim(marg_spat_canape_all_df)
@@ -344,4 +345,5 @@ all_canape_res <- rbind(prun_res_all, rand_imp_res_all, tax_imp_node_res_all, ta
 dim(all_canape_res)
 
 saveRDS(all_canape_res, paste0("output/canaper/canaper_all_data_res_", out_fold,".rds"))
+print(paste0("END: ", out_fold))
 }
