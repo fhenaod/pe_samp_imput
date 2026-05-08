@@ -10,11 +10,11 @@ cols2sel <- c("site",
 
 # folders to load 
 # names2load <- c("fern", "rec", "young", "old", "cnt", "exp")
-names2load <-list.dirs(path = "output/canaper/", full.names = F, recursive = F)
+names2load <- list.dirs(path = "output/canaper/", full.names = F, recursive = F)
 print(names2load)
 
 # reads and consolidate results into a dataframe for each folder
-for(m in 1:2){  
+for(m in seq_along(names2load)){  
   to_load <- names2load[m]
   out_fold <- to_load
   
@@ -76,9 +76,18 @@ marg_frc <- readr::parse_number(marg_spat_canaper_fls)
 late_canape_df_ls <- list()
 for(i in 1:length(late_spat_canaper_fls)){
   late_canape_ls <- readRDS(late_spat_canaper_fls[i])
-  late_canape_df_ls[[i]] <- late_canape_ls %>% 
-    dplyr::select(all_of(cols2sel)) %>% 
-    mutate(sim_n = "none", samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "none")
+  
+  if(class(late_canape_ls) == "list"){
+    late_canape_df_ls[[i]] <- late_canape_ls %>% 
+      lapply(., "[", cols2sel) %>%  
+      Map(cbind, ., sim_n = paste0("sim_", rep(1:length(late_canape_ls))), 
+          samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "none") %>% 
+      bind_rows()
+  } else {
+    late_canape_df_ls[[i]] <- late_canape_ls %>% 
+      dplyr::select(all_of(cols2sel)) %>% 
+      mutate(sim_n = "none", samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "none")
+  }
 }
 late_spat_canape_all_df <- data.table::rbindlist(late_canape_df_ls) ; dim(late_spat_canape_all_df)
 
@@ -86,9 +95,18 @@ late_spat_canape_all_df <- data.table::rbindlist(late_canape_df_ls) ; dim(late_s
 marg_canape_df_ls <- list()
 for(i in 1:length(marg_spat_canaper_fls)){
   marg_canape_ls <- readRDS(marg_spat_canaper_fls[i])
-  marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
-    dplyr::select(all_of(cols2sel)) %>% 
-    mutate(sim_n = "none", samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "none")
+  
+  if(class(marg_canape_ls) == "list"){
+    marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
+      lapply(., "[", cols2sel) %>%  
+      Map(cbind, ., sim_n = paste0("sim_", rep(1:length(marg_canape_ls))), 
+          samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "none") %>% 
+      bind_rows()
+  } else {
+    marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
+      dplyr::select(all_of(cols2sel)) %>% 
+      mutate(sim_n = "none", samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "none")
+  }
 }
 marg_spat_canape_all_df <- data.table::rbindlist(marg_canape_df_ls) ; dim(marg_spat_canape_all_df)
 
@@ -242,9 +260,17 @@ marg_frc <- readr::parse_number(marg_spat_canaper_fls)
 late_canape_df_ls <- list()
 for(i in 1:length(late_spat_canaper_fls)){
   late_canape_ls <- readRDS(late_spat_canaper_fls[i])
-  late_canape_df_ls[[i]] <- late_canape_ls %>% 
-    dplyr::select(all_of(cols2sel)) %>% 
-    mutate(sim_n = "none", samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "taxonomy - node")
+  if(class(late_canape_ls) == "list"){
+    late_canape_df_ls[[i]] <- late_canape_ls %>% 
+      lapply(., "[", cols2sel) %>%  
+      Map(cbind, ., sim_n = paste0("sim_", rep(1:length(late_canape_ls))), 
+          samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "taxonomy - node") %>% 
+      bind_rows()
+  } else {
+    late_canape_df_ls[[i]] <- late_canape_ls %>% 
+      dplyr::select(all_of(cols2sel)) %>% 
+      mutate(sim_n = "none", samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "taxonomy - node")
+  }
 }
 late_spat_canape_all_df <- data.table::rbindlist(late_canape_df_ls) ; dim(late_spat_canape_all_df)
 
@@ -252,9 +278,17 @@ late_spat_canape_all_df <- data.table::rbindlist(late_canape_df_ls) ; dim(late_s
 marg_canape_df_ls <- list()
 for(i in 1:length(marg_spat_canaper_fls)){
   marg_canape_ls <- readRDS(marg_spat_canaper_fls[i])
-  marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
-    dplyr::select(all_of(cols2sel)) %>% 
-    mutate(sim_n = "none", samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "taxonomy - node")
+  if(class(marg_canape_ls) == "list"){
+    marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
+      lapply(., "[", cols2sel) %>%  
+      Map(cbind, ., sim_n = paste0("sim_", rep(1:length(marg_canape_ls))), 
+          samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "taxonomy - node") %>% 
+      bind_rows()
+  } else {
+    marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
+      dplyr::select(all_of(cols2sel)) %>% 
+      mutate(sim_n = "none", samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "taxonomy - node")
+  }
 }
 marg_spat_canape_all_df <- data.table::rbindlist(marg_canape_df_ls) ; dim(marg_spat_canape_all_df)
 
@@ -320,9 +354,17 @@ marg_frc <- readr::parse_number(marg_spat_canaper_fls)
 late_canape_df_ls <- list()
 for(i in 1:length(late_spat_canaper_fls)){
   late_canape_ls <- readRDS(late_spat_canaper_fls[i])
-  late_canape_df_ls[[i]] <- late_canape_ls %>% 
-    dplyr::select(all_of(cols2sel)) %>% 
-    mutate(sim_n = "none", samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "taxonomy - random")
+  if(class(late_canape_ls) == "list"){
+    late_canape_df_ls[[i]] <- late_canape_ls %>% 
+      lapply(., "[", cols2sel) %>%  
+      Map(cbind, ., sim_n = paste0("sim_", rep(1:length(late_canape_ls))), 
+          samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "taxonomy - random") %>% 
+      bind_rows()
+  } else {
+    late_canape_df_ls[[i]] <- late_canape_ls %>% 
+      dplyr::select(all_of(cols2sel)) %>% 
+      mutate(sim_n = "none", samp_frac = late_frc[i], treat = "late-spat_pr", imputation = "taxonomy - random") 
+  }
 }
 late_spat_canape_all_df <- data.table::rbindlist(late_canape_df_ls) ; dim(late_spat_canape_all_df)
 
@@ -330,9 +372,17 @@ late_spat_canape_all_df <- data.table::rbindlist(late_canape_df_ls) ; dim(late_s
 marg_canape_df_ls <- list()
 for(i in 1:length(marg_spat_canaper_fls)){
   marg_canape_ls <- readRDS(marg_spat_canaper_fls[i])
-  marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
-    dplyr::select(all_of(cols2sel)) %>% 
-    mutate(sim_n = "none", samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "taxonomy - random")
+  if(class(marg_canape_ls) == "list"){
+    marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
+      lapply(., "[", cols2sel) %>%  
+      Map(cbind, ., sim_n = paste0("sim_", rep(1:length(marg_canape_ls))), 
+          samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "taxonomy - random") %>% 
+      bind_rows()
+  } else {
+    marg_canape_df_ls[[i]] <- marg_canape_ls %>% 
+      dplyr::select(all_of(cols2sel)) %>% 
+      mutate(sim_n = "none", samp_frac = marg_frc[i], treat = "marg-spat_pr", imputation = "taxonomy - random")
+  }
 }
 marg_spat_canape_all_df <- data.table::rbindlist(marg_canape_df_ls) ; dim(marg_spat_canape_all_df)
 
@@ -347,3 +397,4 @@ dim(all_canape_res)
 saveRDS(all_canape_res, paste0("output/canaper/canaper_all_data_res_", out_fold,".rds"))
 print(paste0("END: ", out_fold))
 }
+
