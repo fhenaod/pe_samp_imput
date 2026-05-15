@@ -269,7 +269,7 @@ get_t2t_metrics=function(ref_tree, compar_tree, sum, sim, norm){
 # simulate trees with a fixed topology given average node age #####
 # gamma may produce more asymmetric tree shapes
 # shape controls the concentration of node ages, larger make them more clustered while lower make them more spread
-sim_fixed_topology_ages <- function(topology, nrep, root_age,
+sim_fixed_topology_ages=function(topology, nrep, root_age,
                                          mean_node_age, sd_node_age,
                                          min_edge, 
                                          dist = c("normal", "gamma", "exponential")) {
@@ -313,7 +313,7 @@ sim_fixed_topology_ages <- function(topology, nrep, root_age,
 
 # simulates trees with a fixed topology, branch lengths drawn from exponential distribution #####
 # smaller rate retrieve longer branches (spread), while larger rate shorter branches (compact)
-sim_fixed_topo_exp_br <- function(topology, nrep , rate) {
+sim_fixed_topo_exp_br=function(topology, nrep , rate) {
   out <- vector("list", nrep)
   for (i in seq_len(nrep)) {
     tr <- topology
@@ -327,7 +327,7 @@ sim_fixed_topo_exp_br <- function(topology, nrep , rate) {
 }
 
 # scales a tree to a given root age #####
-set_tree_root_age <- function(tree, root_age) {
+set_tree_root_age=function(tree, root_age) {
   nh <- nodeHeights(tree) # current root age (height of tree)
   current_root_age <- max(nh[, 2]) # height above root for each edge end
   
@@ -335,4 +335,89 @@ set_tree_root_age <- function(tree, root_age) {
   tree$edge.length <- tree$edge.length * scale
   
   tree
+}
+
+# run canape over a tree
+run_cananpe_tree=function(tree){
+  targ_tr_ls <- tree ; canaper_ls <- c()
+  
+  ifelse(Ntip(targ_tr_ls) %>% max() <= Ntip(fern_tre), "Ok n tips", stop(print("Error")))
+  
+  ifelse(sum(names(occ_mat) %in% targ_tr_ls$tip.label) < 30, next, "")
+  
+  occ_mat2 <- occ_mat[rowSums(occ_mat[, which(targ_tr_ls$tip.label %in% colnames(occ_mat))]) > 0, ]
+  rand_test <- cpr_rand_test(occ_mat2, targ_tr_ls, 
+                             null_model = "curveball", 
+                             n_iterations = saturation_point,
+                             n_reps = canaper_n_reps,
+                             tbl_out = T)
+  
+  canape_res <- cpr_classify_endem(rand_test)
+  sig_list <- list(canape_res, 
+                   cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, "pd_signif"), 
+                   cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, "pe_signif"), 
+                   tryCatch({
+                     cpr_classify_signif(rand_test, metric = "rpd") %>% dplyr::select(site, rpd_signif)
+                   },
+                   error = function(e) {
+                     message("cpr_classify_signif() failed: ", conditionMessage(e))
+                     cpr_classify_signif(rand_test, metric = "pd") %>% 
+                       select("site") %>% mutate(rpd_signif = NA)
+                   }
+                   ), 
+                   tryCatch({
+                     cpr_classify_signif(rand_test, metric = "rpe") %>% dplyr::select(site, rpe_signif)
+                   },
+                   error = function(e) {
+                     message("cpr_classify_signif() failed: ", conditionMessage(e))
+                     cpr_classify_signif(rand_test, metric = "pd") %>% 
+                       select("site") %>% mutate(rpe_signif = NA)
+                   })
+  )
+  
+  canaper_ls <- plyr::join_all(sig_list, by = 'site', type = 'left')
+  return(canaper_ls)
+} 
+
+# run canape over a list of trees
+run_canape_ls_trees=function(trees_list){
+  targ_tr_ls <- trees_list ; canaper_ls <- list()
+  ifelse(sapply(targ_tr_ls, Ntip) %>% max() <= Ntip(fern_tre), "Ok n tips", stop(print("Error")))
+  
+  for(j in 1:length(targ_tr_ls)){
+    occ_mat2 <- occ_mat[rowSums(occ_mat[, which(targ_tr_ls[[j]]$tip.label %in% colnames(occ_mat))]) > 0, ]
+    
+    rand_test <- cpr_rand_test(occ_mat2, targ_tr_ls[[j]], 
+                               null_model = "curveball", 
+                               n_iterations = saturation_point,
+                               n_reps = canaper_n_reps,
+                               tbl_out = T)
+    
+    canape_res <- cpr_classify_endem(rand_test)
+    sig_list <- list(canape_res, 
+                     cpr_classify_signif(rand_test, metric = "pd")  %>% select(site, pd_signif), 
+                     cpr_classify_signif(rand_test, metric = "pe")  %>% select(site, pe_signif), 
+                     tryCatch({
+                       cpr_classify_signif(rand_test, metric = "rpd") %>% dplyr::select(site, rpd_signif)
+                     },
+                     error = function(e) {
+                       message("cpr_classify_signif() failed: ", conditionMessage(e))
+                       cpr_classify_signif(rand_test, metric = "pd") %>% 
+                         select("site") %>% mutate(rpd_signif = NA)
+                     }
+                     ), 
+                     tryCatch({
+                       cpr_classify_signif(rand_test, metric = "rpe") %>% dplyr::select(site, rpe_signif)
+                     },
+                     error = function(e) {
+                       message("cpr_classify_signif() failed: ", conditionMessage(e))
+                       cpr_classify_signif(rand_test, metric = "pd") %>% 
+                         select("site") %>% mutate(rpe_signif = NA)
+                     })
+    )
+    
+    canaper_ls[[j]] <- plyr::join_all(sig_list, by = 'site', type = 'left')
+    print(paste0("iteration: ", i, "-",  j))
+  }
+  return(canaper_ls)
 }
