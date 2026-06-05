@@ -85,16 +85,21 @@ cols2sel <- c("site",
               "pd_signif", "pe_signif"#, "rpd_signif", "rpe_signif"
               )
 
-rnd_canaper_fls <- list.files("output/canaper", "canaper_rand_pr_[0-9]", all.files = T, full.names = T)
+names2load <- list.dirs(path = "output/canaper/", full.names = F, recursive = F)
+print(names2load)
+
+to_load <- "fern"
+
+rnd_canaper_fls <- list.files(paste0("output/canaper/", to_load), "canaper_rand_pr_[0-9]", all.files = T, full.names = T)
 rand_frc <- readr::parse_number(rnd_canaper_fls)
 
-late_canaper_fls <- list.files("output/canaper", "canaper_late_pr_[0-9]", all.files = T, full.names = T)
+late_canaper_fls <- list.files(paste0("output/canaper/", to_load), "canaper_late_pr_[0-9]", all.files = T, full.names = T)
 late_frc <- readr::parse_number(late_canaper_fls)
 
-marg_canaper_fls <- list.files("output/canaper", "canaper_marg_pr_[0-9]", all.files = T, full.names = T)
+marg_canaper_fls <- list.files(paste0("output/canaper/", to_load), "canaper_marg_pr_[0-9]", all.files = T, full.names = T)
 marg_frc <- readr::parse_number(marg_canaper_fls)
 
-get_tabs2res <- F
+get_tabs2res <- T
 if(get_tabs2res){
 # random
 rnd_canape_df_ls <- list()
@@ -133,9 +138,9 @@ for(i in 1:length(marg_canaper_fls)){
 marg_pr_canape_all_df <- data.table::rbindlist(marg_canape_df_ls) ; dim(marg_pr_canape_all_df)
 
 prun_res_all <- rbind(rnd_pr_canape_all_df, late_pr_canape_all_df, marg_pr_canape_all_df)
-prun_res_all %>% saveRDS("output/prun_res_all.rds")
+prun_res_all %>% saveRDS(file = paste0("output/canaper/canaper_prun_res_all_", to_load ,".rds"))
 } else {
-  prun_res_all <- readRDS("output/prun_res_all.rds") ; head(prun_res_all)
+  prun_res_all <- readRDS(paste0("output/canaper/canaper_prun_res_all_", to_load, ".rds")) ; head(prun_res_all)
 }
 
 ## PD prop significance ####
