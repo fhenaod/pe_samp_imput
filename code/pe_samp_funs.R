@@ -14,12 +14,13 @@ margin_funct=function(x){cut(x,
                              labels = cat2filt)
 }
 
-# classifies in three categories significance values from canaper #####
+# classifies in three categories given a significance range values from canaper #####
 signif2cats=function(x){
   ifelse(x %in% c("< 0.01", "< 0.025"), "sig_low", 
          ifelse(x %in% c("> 0.975", "> 0.99"), "sig_high", "non_sig"))
 }
 
+# classifies in three categories given a significance threshold value from canaper #####
 thres2cats=function(x){
   ifelse(x >= ., "sig_low", 
          ifelse(x %in% c("> 0.975", "> 0.99"), "sig_high", "non_sig"))
