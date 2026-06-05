@@ -5,12 +5,14 @@ cols2sel <- c("site",
               "pd_obs", "pe_obs", "rpd_obs", "rpe_obs", 
               "pd_rand_mean","pe_rand_mean", "rpd_rand_mean", "rpe_rand_mean",
               "pd_obs_z", "pe_obs_z", "rpd_obs_z", "rpe_obs_z" ,"endem_type",
-              "pd_signif", "pe_signif" #, "rpd_signif", "rpe_signif"
+              "pd_signif", "pe_signif", # "rpd_signif", "rpe_signif"
+              "pe_obs_p_upper", "pe_alt_obs_p_upper", "rpe_obs_p_upper"
               )
 
 # folders to load 
-# names2load <- c("fern", "rec", "young", "old", "cnt", "exp")
-names2load <- list.dirs(path = "output/canaper/", full.names = F, recursive = F)
+names2load <- c("fern"#, "rec", "young", "old", "cnt", "exp"
+                )
+#names2load <- list.dirs(path = "output/canaper/", full.names = F, recursive = F)
 print(names2load)
 
 # reads and consolidate results into a dataframe for each folder
