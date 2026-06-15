@@ -3,10 +3,20 @@ library(tidyverse)
 # columns to extract from canaper result tables
 cols2sel <- c("site", 
               "pd_obs", "pe_obs", "rpd_obs", "rpe_obs", 
+              "pd_alt_obs", "pe_alt_obs", 
+              
               "pd_rand_mean","pe_rand_mean", "rpd_rand_mean", "rpe_rand_mean",
-              "pd_obs_z", "pe_obs_z", "rpd_obs_z", "rpe_obs_z" ,"endem_type",
+              "pd_rand_sd",  "rpd_rand_sd", "pe_rand_sd",  "rpe_rand_sd",
+              
+              "pd_alt_rand_mean", "pd_alt_rand_sd", "pe_alt_rand_mean", "pe_alt_rand_sd", 
+              
+              "pd_obs_z", "pe_obs_z", "rpd_obs_z", "rpe_obs_z",
+              "pd_alt_obs_z", "pe_alt_obs_z", 
+              
+              "pe_obs_p_upper", "pe_alt_obs_p_upper", "rpe_obs_p_upper",
               "pd_signif", "pe_signif", # "rpd_signif", "rpe_signif"
-              "pe_obs_p_upper", "pe_alt_obs_p_upper", "rpe_obs_p_upper"
+              
+              "endem_type"
               )
 
 # folders to load 
@@ -400,3 +410,8 @@ saveRDS(all_canape_res, paste0("output/canaper/canaper_all_data_res_", out_fold,
 print(paste0("END: ", out_fold))
 }
 
+all_canape_res %>% 
+  filter(treat == "late-spat_pr",
+         samp_frac == .05,
+         imputation == "none"
+  ) %>% dim
