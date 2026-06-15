@@ -125,8 +125,8 @@ for(h in seq_along(names2load)) {
     scale_shape_manual(values = c("Random" = 4, 
                                   "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                   "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
-    coord_cartesian(ylim = c(0.5, 0.98)) +
-    labs(title = nams4til[[i]],
+    coord_cartesian(ylim = c(0.3, 0.98)) +
+    labs(title = nams4til[h],
       x = "Proportion of tips removed", y = "Mean Matthews correlation coefficient", 
       color = "Imputation", shape = "Pruning\nmethod") +
     facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
@@ -158,7 +158,7 @@ pl_long <- "
 for(i in 1:length(forms2print)){
   fig_out <- forms2print[i]
 ggsave(filename = paste0("figures/mcc_sim_tress_all_pnl_h", fig_out), 
-       width = 30, height = 45, units = "cm", dpi = 200)
+       width = 30-10, height = 45-10, units = "cm", dpi = 200)
 }
 
 # vertical arrangement #####
