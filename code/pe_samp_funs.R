@@ -422,3 +422,49 @@ run_canape_ls_trees=function(trees_list){
   }
   return(canaper_ls)
 }
+
+# adds clean pruning labels to df for ggplots
+add_pruning_labels=function(df) {
+  df %>%
+    mutate(
+      prun_type = case_when(
+        str_detect(treat, "late-pr")  ~ "Lateral - Phylogenetic",
+        str_detect(treat, "late-spa") ~ "Lateral - Spatial",
+        str_detect(treat, "marg-pr")  ~ "Bilateral - Phylogenetic",
+        str_detect(treat, "marg-spa") ~ "Bilateral - Spatial",
+        str_detect(treat, "rand-pr")  ~ "Random",
+        TRUE ~ "other"
+      ),
+      prun3type = case_when(
+        str_detect(treat, "late-pr")  ~ "Lateral",
+        str_detect(treat, "late-spa") ~ "Lateral",
+        str_detect(treat, "marg-pr")  ~ "Bilateral",
+        str_detect(treat, "marg-spa") ~ "Bilateral",
+        str_detect(treat, "rand-pr")  ~ "Random",
+        TRUE ~ "other"
+      ),
+      prun_mhtd = case_when(
+        str_detect(treat, "late-pr")  ~ "Phylogenetic",
+        str_detect(treat, "late-spa") ~ "Spatial",
+        str_detect(treat, "marg-pr")  ~ "Phylogenetic",
+        str_detect(treat, "marg-spa") ~ "Spatial",
+        str_detect(treat, "rand-pr")  ~ "Random",
+        TRUE ~ "other"
+      ),
+      is_imp = if_else(imputation == "none", "Only pruned", "Imputed"),
+      is_rand = if_else(treat == "rand-pr", "Random pruning", "Biased pruning"),
+      cat2map = paste(treat, imputation, sep = "-")
+    ) %>%
+    mutate(
+      prun_type = factor(prun_type, levels = c("Random", "Trait", "Spatial"),
+                         labels = c("Random", "Phylogenetic", "Spatial")),
+      treat = factor(treat,
+                     levels = c("rand-pr", "late-pr", "marg-pr", "late-spat_pr", "marg-spat_pr"),
+                     labels = c("Random", "Lateral - Phylogenetic", "Bilateral - Phylogenetic",
+                                "Lateral - Spatial", "Bilateral - Spatial")),
+      imputation = factor(imputation,
+                          levels = c("none", "random", "taxonomy - node", "taxonomy - random"),
+                          labels = c("No imputation", "Random", "At crown node", "Below crown node"))
+    )
+}
+
