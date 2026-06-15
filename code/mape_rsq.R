@@ -1,12 +1,24 @@
 library(tidyverse)
 library(yardstick)
 
+# load functions
+source("code/pe_samp_funs.R")
+
 # load and get canaper tables ####
 # empirical full data
 cols2sel <- c("site", 
               "pd_obs", "pe_obs", "rpd_obs", "rpe_obs", 
+              "pd_alt_obs", "pe_alt_obs", 
+              
               "pd_rand_mean","pe_rand_mean", "rpd_rand_mean", "rpe_rand_mean",
-              "pd_obs_z", "pe_obs_z", "rpd_obs_z", "rpe_obs_z" #, "endem_type" 
+              "pd_rand_sd",  "rpd_rand_sd", "pe_rand_sd",  "rpe_rand_sd",
+              
+              "pd_alt_rand_mean", "pd_alt_rand_sd", "pe_alt_rand_mean", "pe_alt_rand_sd", 
+              
+              "pd_obs_z", "pe_obs_z", "rpd_obs_z", "rpe_obs_z", 
+              "pd_alt_obs_z", "pe_alt_obs_z", 
+              
+              "pe_obs_p_upper", "pe_alt_obs_p_upper", "rpe_obs_p_upper" #"endem_type" 
               )
 
 canaper_emp_raw <- readRDS("output/canaper/canaper_empirical.rds")
@@ -18,74 +30,6 @@ canaper_emp <- canaper_emp_raw %>%
 out_fold <- "fern"
 canaper_res_all <- readRDS(paste0("output/canaper/canaper_all_data_res_", out_fold,".rds"))
 
-# mean metric across sims #### 
-# get mean across 100 sims per samp fraction, pruning and imputation methods
-canaper_res_df <- canaper_res_all %>% 
-  group_by(site, samp_frac, treat, imputation) %>% 
-  summarise(across(pd_obs:rpe_obs_z, ~mean(.x, na.rm = T), .names = "m_{.col}")) #%>% dplyr::select(names(canaper_emp))
-
-# build df 
-avg_df <- left_join(canaper_res_df %>% ungroup(), 
-                    canaper_emp %>% ungroup() %>% 
-                      dplyr::select(-c(treat:imputation)) %>% 
-                      rename_if(is.numeric, ~paste0("emp_", .x)), by = join_by("site")) 
-
-m_stats_df <- avg_df %>% 
-  #filter(pd_obs !=is.na(pd_obs)) %>% 
-  group_by(samp_frac, treat, imputation) %>% 
-  summarise(mpe_pd  = mpe_vec(truth = emp_pd_obs, estimate = m_pd_obs, na_rm = T), 
-            mpe_pe  = mpe_vec(truth = emp_pe_obs, estimate = m_pe_obs, na_rm = T), 
-            mpe_rpd  = mpe_vec(truth = emp_rpd_obs, estimate = m_rpd_obs, na_rm = T), 
-            mpe_rpe  = mpe_vec(truth = emp_rpe_obs, estimate = m_rpe_obs, na_rm = T), 
-            mpe_pd_rand_mean  = mpe_vec(truth = emp_pd_rand_mean, estimate = m_pd_rand_mean, na_rm = T), 
-            mpe_pe_rand_mean  = mpe_vec(truth = emp_pe_rand_mean, estimate = m_pe_rand_mean, na_rm = T), 
-            mpe_rpd_rand_mean  = mpe_vec(truth = emp_rpd_rand_mean, estimate = m_rpd_rand_mean, na_rm = T), 
-            mpe_rpe_rand_mean  = mpe_vec(truth = emp_rpe_rand_mean, estimate = m_rpe_rand_mean, na_rm = T),
-            mpe_pd_obs_z = mpe_vec(truth = emp_pd_obs_z, estimate = m_pd_obs_z, na_rm = T),
-            mpe_pe_obs_z = mpe_vec(truth = emp_pe_obs_z, estimate = m_pe_obs_z, na_rm = T),
-            mpe_rpd_obs_z = mpe_vec(truth = emp_rpd_obs_z, estimate = m_rpd_obs_z, na_rm = T),
-            mpe_rpe_obs_z = mpe_vec(truth = emp_rpe_obs_z, estimate = m_rpe_obs_z, na_rm = T),
-            
-            rmse_pd  = rmse_vec(truth = emp_pd_obs, estimate = m_pd_obs, na_rm = T), 
-            rmse_pe  = rmse_vec(truth = emp_pe_obs, estimate = m_pe_obs, na_rm = T), 
-            rmse_rpd  = rmse_vec(truth = emp_rpd_obs, estimate = m_rpd_obs, na_rm = T), 
-            rmse_rpe  = rmse_vec(truth = emp_rpe_obs, estimate = m_rpe_obs, na_rm = T), 
-            rmse_pd_rand_mean  = rmse_vec(truth = emp_pd_rand_mean, estimate = m_pd_rand_mean, na_rm = T), 
-            rmse_pe_rand_mean  = rmse_vec(truth = emp_pe_rand_mean, estimate = m_pe_rand_mean, na_rm = T), 
-            rmse_rpd_rand_mean  = rmse_vec(truth = emp_rpd_rand_mean, estimate = m_rpd_rand_mean, na_rm = T), 
-            rmse_rpe_rand_mean  = rmse_vec(truth = emp_rpe_rand_mean, estimate = m_rpe_rand_mean, na_rm = T),
-            rmse_pd_obs_z = rmse_vec(truth = emp_pd_obs_z, estimate = m_pd_obs_z, na_rm = T),
-            rmse_pe_obs_z = rmse_vec(truth = emp_pe_obs_z, estimate = m_pe_obs_z, na_rm = T),
-            rmse_rpd_obs_z = rmse_vec(truth = emp_rpd_obs_z, estimate = m_rpd_obs_z, na_rm = T),
-            rmse_rpe_obs_z = rmse_vec(truth = emp_rpe_obs_z, estimate = m_rpe_obs_z, na_rm = T),
-            
-            mape_pd  = mape_vec(truth = emp_pd_obs, estimate = m_pd_obs, na_rm = T), 
-            mape_pe  = mape_vec(truth = emp_pe_obs, estimate = m_pe_obs, na_rm = T), 
-            mape_rpd  = mape_vec(truth = emp_rpd_obs, estimate = m_rpd_obs, na_rm = T), 
-            mape_rpe  = mape_vec(truth = emp_rpe_obs, estimate = m_rpe_obs, na_rm = T), 
-            mape_pd_rand_mean  = mape_vec(truth = emp_pd_rand_mean, estimate = m_pd_rand_mean, na_rm = T), 
-            mape_pe_rand_mean  = mape_vec(truth = emp_pe_rand_mean, estimate = m_pe_rand_mean, na_rm = T), 
-            mape_rpd_rand_mean  = mape_vec(truth = emp_rpd_rand_mean, estimate = m_rpd_rand_mean, na_rm = T), 
-            mape_rpe_rand_mean  = mape_vec(truth = emp_rpe_rand_mean, estimate = m_rpe_rand_mean, na_rm = T),
-            mape_pd_obs_z = mape_vec(truth = emp_pd_obs_z, estimate = m_pd_obs_z, na_rm = T),
-            mape_pe_obs_z = mape_vec(truth = emp_pe_obs_z, estimate = m_pe_obs_z, na_rm = T),
-            mape_rpd_obs_z = mape_vec(truth = emp_rpd_obs_z, estimate = m_rpd_obs_z, na_rm = T),
-            mape_rpe_obs_z = mape_vec(truth = emp_rpe_obs_z, estimate = m_rpe_obs_z, na_rm = T),
-            
-            rsq_pd  = rsq_vec(truth = emp_pd_obs, estimate = m_pd_obs, na_rm = T),
-            rsq_pe  = rsq_vec(truth = emp_pe_obs, estimate = m_pe_obs, na_rm = T),
-            rsq_rpd  = rsq_vec(truth = emp_rpd_obs, estimate = m_rpd_obs, na_rm = T),
-            rsq_rpe  = rsq_vec(truth = emp_rpe_obs, estimate = m_rpe_obs, na_rm = T),
-            rsq_pd_rand_mean  = rsq_vec(truth = emp_pd_rand_mean, estimate = m_pd_rand_mean, na_rm = T),
-            rsq_pe_rand_mean  = rsq_vec(truth = emp_pe_rand_mean, estimate = m_pe_rand_mean, na_rm = T),
-            rsq_rpd_rand_mean = rsq_vec(truth = emp_rpd_rand_mean, estimate = m_rpd_rand_mean, na_rm = T),
-            rsq_rpe_rand_mean = rsq_vec(truth = emp_rpe_rand_mean, estimate = m_rpe_rand_mean, na_rm = T),
-            rsq_pd_obs_z  = rsq_vec(truth = emp_pd_obs_z, estimate = m_pd_obs_z, na_rm = T),
-            rsq_pe_obs_z  = rsq_vec(truth = emp_pe_obs_z, estimate = m_pe_obs_z, na_rm = T),
-            rsq_rpd_obs_z = rsq_vec(truth = emp_rpd_obs_z, estimate = m_rpd_obs_z, na_rm = T),
-            rsq_rpe_obs_z = rsq_vec(truth = emp_rpe_obs_z, estimate = m_rpe_obs_z, na_rm = T)
-            )
-
 # metric per sim then mean ####
 canaper_all_df <- left_join(canaper_res_all %>% 
                               dplyr::select(any_of(c(names(canaper_emp), "sim_n"))) %>% ungroup(), 
@@ -95,19 +39,31 @@ canaper_all_df <- left_join(canaper_res_all %>%
 
 stats_sim_df <- canaper_all_df %>% 
   group_by(sim_n, samp_frac, treat, imputation) %>%
-  filter(pd_obs !=is.na(pd_obs)) %>% 
+  #filter(!is.na(pd_obs)) %>% 
   summarise(mpe_pd  = mpe_vec(truth = emp_pd_obs, estimate = pd_obs, na_rm = T),
             mpe_pe  = mpe_vec(truth = emp_pe_obs, estimate = pe_obs, na_rm = T),
             mpe_rpd = mpe_vec(truth = emp_rpd_obs, estimate = rpd_obs, na_rm = T),
             mpe_rpe = mpe_vec(truth = emp_rpe_obs, estimate = rpe_obs, na_rm = T),
+            
+            mpe_pd_alt  = mpe_vec(truth = emp_pd_alt_obs, estimate = pd_alt_obs, na_rm = T),
+            mpe_pe_alt  = mpe_vec(truth = emp_pe_alt_obs, estimate = pe_alt_obs, na_rm = T),
+            
             mpe_pd_rand_mean  = mpe_vec(truth = emp_pd_rand_mean, estimate = pd_rand_mean, na_rm = T),
             mpe_pe_rand_mean  = mpe_vec(truth = emp_pe_rand_mean, estimate = pe_rand_mean, na_rm = T),
             mpe_rpd_rand_mean = mpe_vec(truth = emp_rpd_rand_mean, estimate = rpd_rand_mean, na_rm = T),
             mpe_rpe_rand_mean = mpe_vec(truth = emp_rpe_rand_mean, estimate = rpe_rand_mean, na_rm = T),
+            
             mpe_pd_obs_z = mpe_vec(truth = emp_pd_obs_z, estimate = pd_obs_z, na_rm = T),
             mpe_pe_obs_z = mpe_vec(truth = emp_pe_obs_z, estimate = pe_obs_z, na_rm = T),
             mpe_rpd_obs_z = mpe_vec(truth = emp_rpd_obs_z, estimate = rpd_obs_z, na_rm = T),
             mpe_rpe_obs_z = mpe_vec(truth = emp_rpe_obs_z, estimate = rpe_obs_z, na_rm = T),
+            
+            mpe_pe_obs_p_upper = mpe_vec(truth = emp_pe_obs_p_upper+1e-4, estimate = pe_obs_p_upper+1e-4, na_rm = T),
+            mpe_pe_alt_p_upper = mpe_vec(truth = emp_pe_alt_obs_p_upper+1e-4, estimate = pe_alt_obs_p_upper+1e-4, na_rm = T),
+            mpe_rpe_obs_p_upper = mpe_vec(truth = emp_rpe_obs_p_upper+1e-4, estimate = rpe_obs_p_upper+1e-4, na_rm = T),
+
+            mpe_pd_alt_obs_z = mpe_vec(truth = emp_pd_alt_obs_z, estimate = pd_alt_obs_z, na_rm = T),
+            mpe_pe_alt_obs_z = mpe_vec(truth = emp_pe_alt_obs_z, estimate = pe_alt_obs_z, na_rm = T),
             
             rmse_pd  = rmse_vec(truth = emp_pd_obs, estimate = pd_obs, na_rm = T),
             rmse_pe  = rmse_vec(truth = emp_pe_obs, estimate = pe_obs, na_rm = T),
@@ -154,40 +110,10 @@ stats_sim_df <- canaper_all_df %>%
 mpe_means <- stats_sim_df %>% 
   select(sim_n, samp_frac, treat, imputation, contains(match = c("mpe"))) %>% 
   ungroup() %>% group_by(samp_frac, treat, imputation) %>% 
-  summarise(across(mpe_pd:mpe_rpe_obs_z, ~mean(.x, na.rm = T), .names = "mean_{.col}"),
-            across(mpe_pd:mpe_rpe_obs_z, ~sd(.x, na.rm = T), .names = "sd_{.col}"))
+  summarise(across(mpe_pd:mpe_pe_alt_obs_z, ~mean(.x, na.rm = T), .names = "mean_{.col}"),
+            across(mpe_pd:mpe_pe_alt_obs_z, ~sd(.x, na.rm = T), .names = "sd_{.col}"))
 
-mpe_means <- mpe_means %>% 
-  mutate(prun_type = case_when(str_detect(treat, "late-pr") ~ "Lateral - Phylogenetic", 
-                               str_detect(treat, "late-spa") ~ "Lateral - Spatial",
-                               str_detect(treat, "marg-pr") ~ "Bilateral - Phylogenetic", 
-                               str_detect(treat, "marg-spa") ~ "Bilateral - Spatial",
-                               str_detect(treat, "rand-pr") ~ "Random", 
-                               TRUE ~ "other" # Default value
-                               ),
-        prun3type = case_when(str_detect(treat, "late-pr") ~ "Lateral", 
-                        str_detect(treat, "late-spa") ~ "Lateral",
-                        str_detect(treat, "marg-pr") ~ "Bilateral", 
-                        str_detect(treat, "marg-spa") ~ "Bilateral",
-                        str_detect(treat, "rand-pr") ~ "Random", 
-                        TRUE ~ "other" # Default value
-                        ),
-         prun_mhtd = case_when(str_detect(treat, "late-pr") ~ "Phylogenetic", 
-                        str_detect(treat, "late-spa") ~ "Spatial",
-                        str_detect(treat, "marg-pr") ~ "Phylogenetic", 
-                        str_detect(treat, "marg-spa") ~ "Spatial",
-                        str_detect(treat, "rand-pr") ~ "Random", 
-                        TRUE ~ "other" # Default value
-                        )
-                     ) %>% 
-  mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"), 
-         is_rand = ifelse(treat == "rand-pr", "Random pruning", "Biased pruning"),
-         cat2map = paste0(treat, "-" , imputation)) %>% 
-  mutate(prun_type = factor(prun_type, levels = c("Random", "Trait", "Spatial"), labels = c("Random", "Phylogenetic", "Spatial")),
-         treat = factor(treat, levels = c("rand-pr", "late-pr", "marg-pr", "late-spat_pr", "marg-spat_pr"), 
-                        labels = c("Random", "Lateral - Phylogenetic", "Bilateral - Phylogenetic", "Lateral - Spatial", "Bilateral - Spatial")),
-         imputation = factor(imputation, levels = c("none", "random", 'taxonomy - node', "taxonomy - random"), 
-                             labels = c("No imputation", "Random", "At crown node", "Bellow crown node")) )
+mpe_means <- mpe_means %>% add_pruning_labels
 
 ## rmse - absolute accuracy ####
 rmse_means <- stats_sim_df %>% 
@@ -196,37 +122,7 @@ rmse_means <- stats_sim_df %>%
   summarise(across(rmse_pd:rmse_rpe_obs_z, ~mean(.x, na.rm = T), .names = "mean_{.col}"),
             across(rmse_pd:rmse_rpe_obs_z, ~sd(.x, na.rm = T), .names = "sd_{.col}"))
 
-rmse_means <- rmse_means %>% 
-  mutate(prun_type = case_when(str_detect(treat, "late-pr") ~ "Lateral - Phylogenetic", 
-                               str_detect(treat, "late-spa") ~ "Lateral - Spatial",
-                               str_detect(treat, "marg-pr") ~ "Bilateral - Phylogenetic", 
-                               str_detect(treat, "marg-spa") ~ "Bilateral - Spatial",
-                               str_detect(treat, "rand-pr") ~ "Random", 
-                               TRUE ~ "other" # Default value
-  ),
-  prun3type = case_when(str_detect(treat, "late-pr") ~ "Lateral", 
-                        str_detect(treat, "late-spa") ~ "Lateral",
-                        str_detect(treat, "marg-pr") ~ "Bilateral", 
-                        str_detect(treat, "marg-spa") ~ "Bilateral",
-                        str_detect(treat, "rand-pr") ~ "Random", 
-                        TRUE ~ "other" # Default value
-  ),
-  prun_mhtd = case_when(str_detect(treat, "late-pr") ~ "Phylogenetic", 
-                        str_detect(treat, "late-spa") ~ "Spatial",
-                        str_detect(treat, "marg-pr") ~ "Phylogenetic", 
-                        str_detect(treat, "marg-spa") ~ "Spatial",
-                        str_detect(treat, "rand-pr") ~ "Random", 
-                        TRUE ~ "other" # Default value
-  )
-  ) %>% 
-  mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed"), 
-         is_rand = ifelse(treat == "rand-pr", "Random pruning", "Biased pruning"),
-         cat2map = paste0(treat, "-" , imputation)) %>% 
-  mutate(prun_type = factor(prun_type, levels = c("Random", "Trait", "Spatial"), labels = c("Random", "Phylogenetic", "Spatial")),
-         treat = factor(treat, levels = c("rand-pr", "late-pr", "marg-pr", "late-spat_pr", "marg-spat_pr"), 
-                        labels = c("Random", "Lateral - Phylogenetic", "Bilateral - Phylogenetic", "Lateral - Spatial", "Bilateral - Spatial")),
-         imputation = factor(imputation, levels = c("none", "random", 'taxonomy - node', "taxonomy - random"), 
-                             labels = c("No imputation", "Random", "At crown node", "Bellow crown node")) )
+rmse_means <- rmse_means %>% add_pruning_labels
 
 ## mape - relative accuracy ####
 mape_means <- stats_sim_df %>% 
@@ -316,8 +212,9 @@ forms2print <- c(".png", ".pdf", ".svg")
 # Mean and sd ####
 ## MPE ####
 ### with random imputation #### 
-## Observed
-# PD
+### Observed ####
+## PD 
+# actual tree
 mpe_pd_sd_pt <- mpe_means %>%
   ggplot(aes(x = samp_frac, y = mean_mpe_pd, 
              ymin = mean_mpe_pd - sd_mpe_pd, 
@@ -330,7 +227,7 @@ mpe_pd_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = "PD", 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
     color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -351,7 +248,7 @@ mpe_pe_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = "PE", 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -372,7 +269,7 @@ mpe_rpd_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = "RPD", 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -393,7 +290,7 @@ mpe_rpe_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = "RPE", 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -401,7 +298,50 @@ mpe_rpe_sd_pt <- mpe_means %>%
   theme_classic(base_size = 12) +
   theme(strip.background = element_blank(), legend.position = "right")
 
-# SES
+# comparison tree 
+mpe_pd_alt_sd_pt <- mpe_means %>%
+  ggplot(aes(x = samp_frac, y = mean_mpe_pd_alt, 
+             ymin = mean_mpe_pd_alt - sd_mpe_pd_alt, 
+             ymax = mean_mpe_pd_alt + sd_mpe_pd_alt,
+             color = imputation, shape = treat)) +
+  geom_line(linewidth = 0.9, alpha = 0.65) + 
+  geom_pointrange(position = position_dodge2(width = .02, padding = 0.5), linewidth = 0.3, fatten = 3) + 
+  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
+  scale_shape_manual(values = c("Random" = 4, 
+                                "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
+                                "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
+  labs(subtitle = "PD comparison", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
+       color = "Imputation", shape = "Pruning\nmethod") +
+  facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
+         shape = guide_legend(override.aes = list(shape = c(4, 20, 18, 15, 17), linetype =  0))) +
+  theme_classic(base_size = 12) +
+  theme(strip.background = element_blank(), legend.position = "right")
+
+# PE
+mpe_pe_alt_sd_pt <- mpe_means %>% 
+  ggplot(aes(x = samp_frac, y = mean_mpe_pe_alt, 
+             ymin = mean_mpe_pe_alt - sd_mpe_pe_alt, 
+             ymax = mean_mpe_pe_alt + sd_mpe_pe_alt,
+             color = imputation, shape = treat)) +
+  geom_line(linewidth = 0.9, alpha = 0.65) + 
+  geom_pointrange(position = position_dodge2(width = .02, padding = 0.5), linewidth = 0.3, fatten = 3) + 
+  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
+  scale_shape_manual(values = c("Random" = 4, 
+                                "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
+                                "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
+  labs(subtitle = expression("PE"["comparison"]), , 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
+       color = "Imputation", shape = "Pruning\nmethod") +
+  facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
+         shape = guide_legend(override.aes = list(shape = c(4, 20, 18, 15, 17), linetype =  0))) +
+  theme_classic(base_size = 12) +
+  theme(strip.background = element_blank(), legend.position = "right")
+
+### SES ####
+# actual tree
 # PD ses
 mpe_pd_ses_pt <- mpe_means %>% 
    ggplot(aes(x = samp_frac, y = mean_mpe_pd_obs_z, 
@@ -415,7 +355,7 @@ mpe_pd_ses_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("PD"["SES"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -436,7 +376,7 @@ mpe_pe_ses_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("PE"["SES"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -457,7 +397,7 @@ mpe_rpd_ses_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("RPD"["SES"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -478,7 +418,7 @@ mpe_rpe_ses_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("RPE"["SES"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -486,7 +426,50 @@ mpe_rpe_ses_pt <- mpe_means %>%
   theme_classic(base_size = 12) +
   theme(strip.background = element_blank(), legend.position = "right")
 
-# Randomized 
+# comparison tree 
+# PD ses
+mpe_pd_alt_ses_pt <- mpe_means %>% 
+  ggplot(aes(x = samp_frac, y = mean_mpe_pd_alt_obs_z, 
+             ymin = mean_mpe_pd_alt_obs_z - sd_mpe_pd_alt_obs_z, 
+             ymax = mean_mpe_pd_alt_obs_z + sd_mpe_pd_alt_obs_z,
+             color = imputation, shape = treat)) +
+  geom_line(linewidth = 0.9, alpha = 0.65) + 
+  geom_pointrange(position = position_dodge2(width = .02, padding = 0.5), linewidth = 0.3, fatten = 3) + 
+  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
+  scale_shape_manual(values = c("Random" = 4, 
+                                "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
+                                "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
+  labs(subtitle = expression("PD comparison"["SES"]), 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
+       color = "Imputation", shape = "Pruning\nmethod") +
+  facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
+         shape = guide_legend(override.aes = list(shape = c(4, 20, 18, 15, 17), linetype =  0))) +
+  theme_classic(base_size = 12) +
+  theme(strip.background = element_blank(), legend.position = "right")
+
+# PE ses
+mpe_pe_alt_ses_pt <- mpe_means %>% 
+  ggplot(aes(x = samp_frac, y = mean_mpe_pe_alt_obs_z, 
+             ymin = mean_mpe_pe_alt_obs_z - sd_mpe_pe_alt_obs_z, 
+             ymax = mean_mpe_pe_alt_obs_z + sd_mpe_pe_alt_obs_z,
+             color = imputation, shape = treat)) +
+  geom_line(linewidth = 0.9, alpha = 0.65) + 
+  geom_pointrange(position = position_dodge2(width = .02, padding = 0.5), linewidth = 0.3, fatten = 3) + 
+  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
+  scale_shape_manual(values = c("Random" = 4, 
+                                "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
+                                "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
+  labs(subtitle = expression("PE comparison"["SES"]), 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
+       color = "Imputation", shape = "Pruning\nmethod") +
+  facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
+         shape = guide_legend(override.aes = list(shape = c(4, 20, 18, 15, 17), linetype =  0))) +
+  theme_classic(base_size = 12) +
+  theme(strip.background = element_blank(), legend.position = "right")
+
+### Randomized ####
 # randPD
 mpe_pd_rand_sd_pt <- mpe_means %>% 
   ggplot(aes(x = samp_frac, y = mean_mpe_pd_rand_mean, 
@@ -500,7 +483,7 @@ mpe_pd_rand_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("PD"["randomized"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -521,7 +504,7 @@ mpe_pe_rand_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("PE"["randomized"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -542,7 +525,7 @@ mpe_rpd_rand_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("RPD"["randomized"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -563,7 +546,7 @@ mpe_rpe_rand_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("RPE"["randomized"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -592,13 +575,139 @@ pl_long <- "
 (mpe_rpd_ses_pt) + 
 (mpe_rpe_ses_pt) +
 plot_layout(guides = "collect", 
-  design = pl_long, axis_titles = "collect", tag_level = "new") #+ plot_annotation(tag_levels = "a", tag_prefix = '(', tag_suffix = ")")
+  design = pl_long, axis_titles = "collect", tag_level = "new") #+ #plot_annotation(tag_levels = "a", tag_prefix = '(', tag_suffix = ")")
 
 # loop over fig formats
 for(i in 1:length(forms2print)){
   fig_out <- forms2print[i]
   ggsave(filename = paste0("figures/", out_fold, "/mpe_obs_ses_pnl", fig_out), 
          width = 30, height = 40, units = "cm", dpi = 200)
+}
+
+# alternative tree
+mpe_pd_alt_sd_pt + mpe_pd_alt_ses_pt +
+  mpe_pe_alt_sd_pt + mpe_pe_alt_ses_pt +
+  plot_layout(guides = "collect", axis_titles = "collect", tag_level = "new")
+
+# loop over fig formats
+for(i in 1:length(forms2print)){
+  fig_out <- forms2print[i]
+  ggsave(filename = paste0("figures/", out_fold, "/mpe_compar_pnl", fig_out), 
+         width = 30, height = 20, units = "cm", dpi = 200)
+}
+
+# actual, comparison, ses and randomized metrics
+# panel plots
+pl_long <- "
+  AAGG
+  AAGG
+  BBHH
+  BBHH
+  CCII
+  CCII
+  DDJJ
+  DDJJ
+  EEKK
+  EEKK
+  FFLL
+  FFLL"
+
+# observed and ses metrics
+(mpe_pd_sd_pt) + 
+  mpe_pd_alt_sd_pt + 
+  (mpe_pe_sd_pt) + 
+  (mpe_pe_alt_sd_pt) +
+  (mpe_rpd_sd_pt) + 
+  (mpe_rpe_sd_pt) +
+  (mpe_pd_ses_pt) + 
+  (mpe_pd_alt_ses_pt) +
+  (mpe_pe_ses_pt) + 
+  (mpe_pe_alt_ses_pt) +
+  (mpe_rpd_ses_pt) + 
+  (mpe_rpe_ses_pt) +
+  plot_layout(guides = "collect", 
+              design = pl_long, axis_titles = "collect", tag_level = "new")
+
+# loop over fig formats
+for(i in 1:length(forms2print)){
+  fig_out <- forms2print[i]
+  ggsave(filename = paste0("figures/", out_fold, "/mpe_compar_all_pnl", fig_out), 
+         width = 30, height = 45, units = "cm", dpi = 200)
+}
+
+### p_upper ####
+
+# PE
+mpe_pe_p_up_sd_pt <- mpe_means %>% 
+  ggplot(aes(x = samp_frac, y = mean_mpe_pe_obs_p_upper, 
+             ymin = mean_mpe_pe_obs_p_upper - sd_mpe_pe_obs_p_upper, 
+             ymax = mean_mpe_pe_obs_p_upper + sd_mpe_pe_obs_p_upper,
+             color = imputation, shape = treat)) +
+  geom_line(linewidth = 0.9, alpha = 0.65) + 
+  geom_pointrange(position = position_dodge2(width = .02, padding = 0.5), linewidth = 0.3, fatten = 3) + 
+  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
+  scale_shape_manual(values = c("Random" = 4, 
+                                "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
+                                "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
+  labs(subtitle = "PE observed p upper", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
+       color = "Imputation", shape = "Pruning\nmethod") +
+  facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
+         shape = guide_legend(override.aes = list(shape = c(4, 20, 18, 15, 17), linetype =  0))) +
+  theme_classic(base_size = 12) +
+  theme(strip.background = element_blank(), legend.position = "right")
+
+mpe_pe_alt_p_up_sd_pt <- mpe_means %>% 
+  ggplot(aes(x = samp_frac, y = mean_mpe_pe_alt_p_upper, 
+             ymin = mean_mpe_pe_alt_p_upper - sd_mpe_pe_alt_p_upper, 
+             ymax = mean_mpe_pe_alt_p_upper + sd_mpe_pe_alt_p_upper,
+             color = imputation, shape = treat)) +
+  geom_line(linewidth = 0.9, alpha = 0.65) + 
+  geom_pointrange(position = position_dodge2(width = .02, padding = 0.5), linewidth = 0.3, fatten = 3) + 
+  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
+  scale_shape_manual(values = c("Random" = 4, 
+                                "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
+                                "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
+  labs(subtitle = "PE alternative p upper", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
+       color = "Imputation", shape = "Pruning\nmethod") +
+  facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
+         shape = guide_legend(override.aes = list(shape = c(4, 20, 18, 15, 17), linetype =  0))) +
+  theme_classic(base_size = 12) +
+  theme(strip.background = element_blank(), legend.position = "right")
+
+mpe_rpe_alt_p_up_sd_pt <- mpe_means %>% 
+  ggplot(aes(x = samp_frac, y = mean_mpe_rpe_obs_p_upper, 
+             ymin = mean_mpe_rpe_obs_p_upper - sd_mpe_rpe_obs_p_upper, 
+             ymax = mean_mpe_rpe_obs_p_upper + sd_mpe_rpe_obs_p_upper,
+             color = imputation, shape = treat)) +
+  geom_line(linewidth = 0.9, alpha = 0.65) + 
+  geom_pointrange(position = position_dodge2(width = .02, padding = 0.5), linewidth = 0.3, fatten = 3) + 
+  scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
+  scale_shape_manual(values = c("Random" = 4, 
+                                "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
+                                "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
+  labs(subtitle = "RPE alternative p upper", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
+       color = "Imputation", shape = "Pruning\nmethod") +
+  facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
+         shape = guide_legend(override.aes = list(shape = c(4, 20, 18, 15, 17), linetype =  0))) +
+  theme_classic(base_size = 12) +
+  theme(strip.background = element_blank(), legend.position = "right")
+
+mpe_pe_p_up_sd_pt + 
+  mpe_pe_alt_p_up_sd_pt + 
+  mpe_rpe_alt_p_up_sd_pt +
+  plot_layout(guides = "collect", axis_titles = "collect", tag_level = "new")
+
+# loop over fig formats
+for(i in 1:length(forms2print)){
+  fig_out <- forms2print[i]
+  ggsave(filename = paste0("figures/", out_fold, "/mpe_p_upper_pnl", fig_out), 
+         width = 40, height = 20, units = "cm", dpi = 200)
 }
 
 ### without random imputation #####
@@ -617,7 +726,7 @@ mpe_pd_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = "PD", 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -639,7 +748,7 @@ mpe_pe_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = "PE", 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -661,7 +770,7 @@ mpe_rpd_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = "RPD", 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -683,7 +792,7 @@ mpe_rpe_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = "RPE", 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -706,7 +815,7 @@ mpe_pd_ses_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("PD"["SES"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -728,7 +837,7 @@ mpe_pe_ses_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("PE"["SES"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -750,7 +859,7 @@ mpe_rpd_ses_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("RPD"["SES"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -772,7 +881,7 @@ mpe_rpe_ses_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("RPE"["SES"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -795,7 +904,7 @@ mpe_pd_rand_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("PD"["randomized"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -817,7 +926,7 @@ mpe_pe_rand_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("PE"["randomized"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -839,7 +948,7 @@ mpe_rpd_rand_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("RPD"["randomized"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -861,7 +970,7 @@ mpe_rpe_rand_sd_pt <- mpe_means %>%
                                 "Lateral - Phylogenetic" = 20,  "Bilateral - Phylogenetic" = 18, 
                                 "Lateral - Spatial" = 15, "Bilateral - Spatial" = 17)) +
   labs(subtitle = expression("RPE"["randomized"]), 
-       x = "", y = "Mean Percent Error", 
+       x = "Proportion of tips removed", y = "Mean Percent Error", 
        color = "Imputation", shape = "Pruning\nmethod") +
   facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(shape = "\u2013", linetype =  0, size = 3)),
@@ -941,7 +1050,7 @@ mpe_means %>%
          cat2map = paste0(treat, "-" , imputation)) %>%
   select(samp_frac, treat, imputation, contains("sd_")) %>% 
   select(!contains("rand_")) %>% 
-  filter(imputation != "none") %>% view()
+  filter(imputation != "none") %>% 
   gather(key, value, -samp_frac, -treat, -imputation) %>% 
   ggplot(aes(x = samp_frac, y = value, 
              color = imputation, shape = treat)) +
@@ -951,6 +1060,8 @@ mpe_means %>%
   labs(x = "Sampling fraction", y = "MPE's SD") +
   scale_colour_viridis_d(option = "inferno", begin = .8, end = .05, alpha = .95) + 
   facet_wrap(~ key, scales = "free", ncol = 2)
+ggsave(filename = paste0("figures/", out_fold, "/sd_metr_pnl.pdf"), 
+       width = 30, height = 40, units = "cm", dpi = 200)
 
 # MAPE ####
 ### with random imputation #### 
