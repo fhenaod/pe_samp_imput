@@ -43,24 +43,25 @@ canaper_res_all_df %>% group_by(endem_type) %>% tally
 canaper_res_all_df %>% group_by(pd_signif) %>% tally
 canaper_res_all_df %>% group_by(pe_signif) %>% tally
 
-# NAs count 
-canaper_res_all_df %>% 
-  group_by(treat, samp_frac, imputation) %>% 
-  select(endem_type) %>% 
-  tally(is.na(endem_type)) %>% filter(n > 0)
-
 # CANAPE NA grids per pruning method and treatment
-canaper_res_all_df %>% 
-  group_by(treat, samp_frac, imputation) %>% 
-  select(endem_type, emp_endem_type) %>%
-  mutate(uncat = ifelse(is.na(endem_type), "is_na", "not_na")) %>% 
-  summarise(prop_l = mean(uncat == "is_na")) %>%  
-  mutate(is_imp = ifelse(imputation == "none", "Only pruned", "Imputed")) %>% 
-  ggplot(aes(x = samp_frac, y = (prop_l), color = treat, shape = treat)) + 
+canape_nas <- canaper_res_all_df %>% add_pruning_labels %>% 
+  group_by(treat, samp_frac, prun_mhtd, imputation) %>% 
+  select(endem_type, emp_endem_type) %>% 
+  summarise(
+    n_missing = sum(is.na(endem_type)),
+    n_total = n(),
+    prop_missing = n_missing / n_total, .groups = "drop") %>% 
+  mutate(n_grids = ifelse(prun_mhtd == "Spatial", 1377, 1377*100),
+         n_missing2 = c(n_missing + (n_grids-n_total)),
+         prop_missing2 = n_missing2 / n_grids) 
+  
+
+canape_nas %>% 
+  ggplot(aes(x = samp_frac, y = prop_missing2*100, color = imputation, shape = treat)) + 
     geom_point() + geom_line() + 
+    facet_wrap(~factor(prun_mhtd, c("Random", "Phylogenetic", "Spatial")), labeller = label_value, ncol = 3, scales = "fixed") + 
   labs(title = "CANAPE", 
-       x = "Sampling proportion", y = "Proportion of NAs") + 
-  facet_wrap(~is_imp, scales = "free") + 
+       x = "Sampling proportion", y = "Percentage of NAs") + 
   theme_classic() +
   theme(strip.background = element_blank())
     
