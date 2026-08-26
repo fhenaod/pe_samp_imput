@@ -9,7 +9,7 @@ late_fls <- list.files(paste0("output/pruned_trees/fern"), "lateral_spat",  all.
 late_frc <- readr::parse_number(late_fls)
 
 j = 4
-targ_tr_ls <- readRDS(late_fls[[j]])
+targ_tr_ls <- readRDS(late_fls[[j]]) ; print(late_fls[[j]])
 targ_tre <- targ_tr_ls
 
 # backbone mode ####
