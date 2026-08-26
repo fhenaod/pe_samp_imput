@@ -151,7 +151,7 @@ canaper_mean_stats <- canaper_mean_stats %>%
          treat = factor(treat, levels = c("rand-pr", "late-pr", "marg-pr", "late-spat_pr", "marg-spat_pr"), 
                         labels = c("Random", "Lateral - Phylogenetic", "Bilateral - Phylogenetic", "Lateral - Spatial", "Bilateral - Spatial")),
          imputation = factor(imputation, levels = c("none", "random", 'taxonomy - node', "taxonomy - random"), 
-                             labels = c("No imputation", "Random", "At crown node", "Bellow crown node")) )
+                             labels = c("No imputation", "Random", "At crown node", "Below crown node")) )
   
 ## figs #####
 dir.create(paste0("figures/", out_fold), recursive = T)

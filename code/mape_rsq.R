@@ -161,7 +161,7 @@ mape_means <- mape_means %>%
          treat = factor(treat, levels = c("rand-pr", "late-pr", "marg-pr", "late-spat_pr", "marg-spat_pr"), 
                         labels = c("Random", "Lateral - Phylogenetic", "Bilateral - Phylogenetic", "Lateral - Spatial", "Bilateral - Spatial")),
          imputation = factor(imputation, levels = c("none", "random", 'taxonomy - node', "taxonomy - random"), 
-                             labels = c("No imputation", "Random", "At crown node", "Bellow crown node")) )
+                             labels = c("No imputation", "Random", "At crown node", "Below crown node")) )
 
 ## r-squared - consistency ####
 rsq_means <- stats_sim_df %>% 
@@ -201,7 +201,7 @@ rsq_means <- rsq_means %>%
          treat = factor(treat, levels = c("rand-pr", "late-pr", "marg-pr", "late-spat_pr", "marg-spat_pr"), 
                         labels = c("Random", "Lateral - Phylogenetic", "Bilateral - Phylogenetic", "Lateral - Spatial", "Bilateral - Spatial")),
          imputation = factor(imputation, levels = c("none", "random", 'taxonomy - node', "taxonomy - random"), 
-                             labels = c("No imputation", "Random", "At crown node", "Bellow crown node")) )
+                             labels = c("No imputation", "Random", "At crown node", "Below crown node")) )
 
 # Figures #####
 library(patchwork)
